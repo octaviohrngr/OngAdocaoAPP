@@ -1,5 +1,7 @@
 
 import 'package:flutter/material.dart';
+import 'adoption_form_screen.dart';
+
 
 class AnimalDetailScreen extends StatelessWidget {
   final String name;
@@ -229,11 +231,10 @@ class AnimalDetailScreen extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'A solicitação de adoção será implementada em seguida.',
-                              ),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AdoptionFormScreen(),
                             ),
                           );
                         },
