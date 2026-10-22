@@ -1,29 +1,45 @@
 /// Erro de autenticação com mensagem pronta para exibição.
 class AuthException implements Exception {
   const AuthException(this.message);
+
   final String message;
 
   @override
   String toString() => message;
 }
 
-/// Camada de autenticação simulada.
-///
-/// Troque o corpo dos métodos pela sua API (Firebase, REST etc.) —
-/// as telas só dependem da assinatura, não da implementação.
 class AuthService {
   const AuthService();
 
-  /// Credenciais de teste enquanto não há backend.
   static const _testEmail = 'teste@atipattas.com';
   static const _testPassword = '123456';
 
-  Future<void> signIn({required String email, required String password}) async {
-    await Future<void>.delayed(const Duration(milliseconds: 900));
+  static const _adminEmail = 'admin@atipattas.com';
+  static const _adminPassword = '123456';
 
-    if (email.trim().toLowerCase() != _testEmail || password != _testPassword) {
-      throw const AuthException('E-mail ou senha incorretos.');
+  Future<String> signIn({
+    required String email,
+    required String password,
+  }) async {
+    await Future<void>.delayed(
+      const Duration(milliseconds: 900),
+    );
+
+    final emailDigitado = email.trim().toLowerCase();
+
+    if (emailDigitado == _adminEmail &&
+        password == _adminPassword) {
+      return 'admin';
     }
+
+    if (emailDigitado == _testEmail &&
+        password == _testPassword) {
+      return 'usuario';
+    }
+
+    throw const AuthException(
+      'E-mail ou senha incorretos.',
+    );
   }
 
   Future<void> signUp({
@@ -32,10 +48,15 @@ class AuthService {
     required String phone,
     required String password,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 900));
+    await Future<void>.delayed(
+      const Duration(milliseconds: 900),
+    );
 
-    if (email.trim().toLowerCase() == _testEmail) {
-      throw const AuthException('Este e-mail já está cadastrado.');
+    if (email.trim().toLowerCase() == _testEmail ||
+        email.trim().toLowerCase() == _adminEmail) {
+      throw const AuthException(
+        'Este e-mail já está cadastrado.',
+      );
     }
   }
 }
