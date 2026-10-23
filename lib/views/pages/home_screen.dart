@@ -1,9 +1,12 @@
-
 import 'package:flutter/material.dart';
 
 import '../../services/auth_session.dart';
+import '../theme/app_colors.dart';
+import '../widgets/app_bottom_navigation_bar.dart';
 import 'login_screen.dart';
 import 'animal_detail_screen.dart';
+import 'events_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,44 +32,38 @@ class _HomeScreenState extends State<HomeScreen> {
       name: 'Bento',
       breed: 'Golden',
       age: '3 meses',
-      imageUrl:
-      'https://images.unsplash.com/photo-1552053831-71594a27632d',
-      available: true,
-      gender: Icons.male,
+      imageUrl: 'https://images.unsplash.com/photo-1552053831-71594a27632d',
       type: 'Cães',
       size: 'Grande',
+      gender: Icons.male,
     ),
     _AnimalPreview(
       name: 'Luna',
       breed: 'Gato',
       age: '2 anos',
-      imageUrl:
-      'https://images.unsplash.com/photo-1533738363-b7f9aef128ce',
-      available: true,
-      gender: Icons.female,
+      imageUrl: 'https://images.unsplash.com/photo-1533738363-b7f9aef128ce',
       type: 'Gatos',
       size: 'Pequeno',
+      gender: Icons.female,
     ),
     _AnimalPreview(
       name: 'Caramelo',
       breed: 'Vira-lata',
       age: '1 ano',
-      imageUrl:
-      'https://images.unsplash.com/photo-1544568100-847a948585b9',
-      available: true,
-      gender: Icons.male,
+      imageUrl: 'https://images.unsplash.com/photo-1544568100-847a948585b9',
       type: 'Cães',
       size: 'Grande',
+      gender: Icons.male,
     ),
   ];
 
-  static const Color _primaryGreen = Color(0xFF3BAA57);
-
   List<_AnimalPreview> get _filteredAnimals {
     return _animals.where((animal) {
+      final texto = _searchText.toLowerCase();
+
       final matchesSearch =
-          animal.name.toLowerCase().contains(_searchText.toLowerCase()) ||
-              animal.breed.toLowerCase().contains(_searchText.toLowerCase());
+          animal.name.toLowerCase().contains(texto) ||
+              animal.breed.toLowerCase().contains(texto);
 
       final matchesFilter = _selectedFilter == 'Tudo' ||
           animal.type == _selectedFilter ||
@@ -78,15 +75,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openAnimal(_AnimalPreview animal) {
     if (!AuthSession.isLoggedIn) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const LoginScreen(),
-        ),
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
       return;
     }
 
-    Navigator.of(context).push(
+    Navigator.push(
+      context,
       MaterialPageRoute(
         builder: (_) => AnimalDetailScreen(
           name: animal.name,
@@ -98,37 +95,65 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _navigate(int index) {
+    if (index == 0) return;
+
+    if (index == 1) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const EventsScreen()),
+      );
+    } else if (index == 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Central de alertas em breve.')),
+      );
+    } else if (index == 3) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ProfileScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final animalsToShow = _filteredAnimals;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Row(
-          children: const [
-            Icon(Icons.pets, color: _primaryGreen),
-            SizedBox(width: 8),
-            Text(
+          children: [
+            const Icon(Icons.pets, color: AppColors.primaryGreen),
+            const SizedBox(width: 8),
+            const Text(
               'Atipattas',
               style: TextStyle(
-                color: Colors.black,
+                color: AppColors.textDark,
                 fontWeight: FontWeight.bold,
-                fontSize: 18,
+                fontSize: 20,
               ),
             ),
           ],
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 14,
-              backgroundImage: NetworkImage('https://i.pravatar.cc/100'),
+        actions: [
+          IconButton(
+            tooltip: 'Meu perfil',
+            icon: const Icon(
+              Icons.person_outline,
+              color: AppColors.primaryGreen,
             ),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ProfileScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -136,14 +161,15 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 20, 16, 12),
               child: Text(
                 'Encontre seu novo\nmelhor amigo',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 25,
+                  height: 1.2,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[900],
+                  color: AppColors.textDark,
                 ),
               ),
             ),
@@ -158,30 +184,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   prefixIcon: const Icon(Icons.search),
                   filled: true,
                   fillColor: Colors.white,
-                  contentPadding:
-                  const EdgeInsets.symmetric(vertical: 0),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                    BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                    BorderSide(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             SizedBox(
-              height: 36,
+              height: 40,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: _filters.length,
-                separatorBuilder: (_, __) =>
-                const SizedBox(width: 8),
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
                   final filter = _filters[index];
                   final isSelected = filter == _selectedFilter;
@@ -192,28 +210,33 @@ class _HomeScreenState extends State<HomeScreen> {
                     onSelected: (_) {
                       setState(() => _selectedFilter = filter);
                     },
-                    selectedColor: _primaryGreen,
+                    selectedColor: AppColors.primaryGreen,
                     backgroundColor: Colors.white,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black87,
+                      color: isSelected ? Colors.white : AppColors.textDark,
                       fontWeight: FontWeight.w600,
                     ),
-                    shape: StadiumBorder(
-                      side: BorderSide(color: Colors.grey.shade300),
-                    ),
+                    side: BorderSide.none,
                   );
                 },
               ),
             ),
-            const SizedBox(height: 12),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 18, 16, 10),
+              child: Text(
+                'Animais disponíveis',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+            ),
             Expanded(
               child: animalsToShow.isEmpty
-                  ? const Center(
-                child: Text('Nenhum animal encontrado.'),
-              )
+                  ? const Center(child: Text('Nenhum animal encontrado.'))
                   : ListView.builder(
-                padding:
-                const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 itemCount: animalsToShow.length,
                 itemBuilder: (context, index) {
                   final animal = animalsToShow[index];
@@ -228,28 +251,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: AppBottomNavigationBar(
         currentIndex: 0,
-        selectedItemColor: _primaryGreen,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment_outlined),
-            label: 'Requests',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_none),
-            label: 'Alerts',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
+        onTap: _navigate,
       ),
     );
   }
@@ -260,20 +264,18 @@ class _AnimalPreview {
   final String breed;
   final String age;
   final String imageUrl;
-  final bool available;
-  final IconData gender;
   final String type;
   final String size;
+  final IconData gender;
 
   const _AnimalPreview({
     required this.name,
     required this.breed,
     required this.age,
     required this.imageUrl,
-    required this.available,
-    required this.gender,
     required this.type,
     required this.size,
+    required this.gender,
   });
 }
 
@@ -286,24 +288,16 @@ class _AnimalCard extends StatelessWidget {
     required this.onTap,
   });
 
-  static const Color _primaryGreen = Color(0xFF3BAA57);
-
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      color: Colors.white,
+      elevation: 2,
       clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: InkWell(
         onTap: onTap,
         child: Column(
@@ -312,85 +306,72 @@ class _AnimalCard extends StatelessWidget {
             Stack(
               children: [
                 AspectRatio(
-                  aspectRatio: 16 / 10,
+                  aspectRatio: 16 / 9,
                   child: Image.network(
                     animal.imageUrl,
                     width: double.infinity,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
-                      color: Colors.grey.shade200,
-                      child: const Icon(Icons.pets, size: 40),
+                      color: AppColors.inputFill,
+                      child: const Icon(Icons.pets, size: 45),
                     ),
                   ),
                 ),
-                if (animal.available)
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _primaryGreen,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.circle,
-                            size: 8,
-                            color: Colors.white,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'Disponível',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Disponível',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
+                ),
               ],
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              padding: const EdgeInsets.all(14),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        animal.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          animal.name,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                          ),
                         ),
-                      ),
-                      Text(
-                        animal.breed,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 13,
+                        const SizedBox(height: 3),
+                        Text(
+                          '${animal.breed} • ${animal.age}',
+                          style: const TextStyle(color: AppColors.textGray),
                         ),
-                      ),
-                      Text(
-                        animal.age,
-                        style: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  Icon(animal.gender, color: Colors.grey[500]),
+                  Icon(animal.gender, color: AppColors.primaryGreen),
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: AppColors.textGray,
+                  ),
                 ],
               ),
             ),
