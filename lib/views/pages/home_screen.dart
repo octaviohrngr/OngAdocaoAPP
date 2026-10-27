@@ -1,6 +1,8 @@
+
 import 'package:flutter/material.dart';
 
 import '../../services/auth_session.dart';
+import '../../services/favorites_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_bottom_navigation_bar.dart';
 import 'login_screen.dart';
@@ -19,6 +21,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedFilter = 'Tudo';
   String _searchText = '';
 
+  final FavoritesService _favoritesService = FavoritesService();
+  List<String> _favoritos = [];
+
   final List<String> _filters = [
     'Tudo',
     'Cães',
@@ -32,7 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
       name: 'Bento',
       breed: 'Golden',
       age: '3 meses',
-      imageUrl: 'https://images.unsplash.com/photo-1552053831-71594a27632d',
+      imageUrl:
+      'https://images.unsplash.com/photo-1552053831-71594a27632d',
       type: 'Cães',
       size: 'Grande',
       gender: Icons.male,
@@ -41,7 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
       name: 'Luna',
       breed: 'Gato',
       age: '2 anos',
-      imageUrl: 'https://images.unsplash.com/photo-1533738363-b7f9aef128ce',
+      imageUrl:
+      'https://images.unsplash.com/photo-1533738363-b7f9aef128ce',
       type: 'Gatos',
       size: 'Pequeno',
       gender: Icons.female,
@@ -50,12 +57,41 @@ class _HomeScreenState extends State<HomeScreen> {
       name: 'Caramelo',
       breed: 'Vira-lata',
       age: '1 ano',
-      imageUrl: 'https://images.unsplash.com/photo-1544568100-847a948585b9',
+      imageUrl:
+      'https://images.unsplash.com/photo-1544568100-847a948585b9',
       type: 'Cães',
       size: 'Grande',
       gender: Icons.male,
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarFavoritos();
+  }
+
+  Future<void> _carregarFavoritos() async {
+    final favoritos = await _favoritesService.carregarFavoritos();
+
+    if (!mounted) return;
+
+    setState(() {
+      _favoritos = favoritos;
+    });
+  }
+
+  Future<void> _alternarFavorito(String nomeAnimal) async {
+    await _favoritesService.alternarFavorito(nomeAnimal);
+
+    final favoritos = await _favoritesService.carregarFavoritos();
+
+    if (!mounted) return;
+
+    setState(() {
+      _favoritos = favoritos;
+    });
+  }
 
   List<_AnimalPreview> get _filteredAnimals {
     return _animals.where((animal) {
@@ -77,7 +113,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!AuthSession.isLoggedIn) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(
+          builder: (_) => const LoginScreen(),
+        ),
       );
       return;
     }
@@ -92,7 +130,9 @@ class _HomeScreenState extends State<HomeScreen> {
           imageUrl: animal.imageUrl,
         ),
       ),
-    );
+    ).then((_) {
+      _carregarFavoritos();
+    });
   }
 
   void _navigate(int index) {
@@ -101,16 +141,22 @@ class _HomeScreenState extends State<HomeScreen> {
     if (index == 1) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const EventsScreen()),
+        MaterialPageRoute(
+          builder: (_) => const EventsScreen(),
+        ),
       );
     } else if (index == 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Central de alertas em breve.')),
+        const SnackBar(
+          content: Text('Central de alertas em breve.'),
+        ),
       );
     } else if (index == 3) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const ProfileScreen()),
+        MaterialPageRoute(
+          builder: (_) => const ProfileScreen(),
+        ),
       );
     }
   }
@@ -127,7 +173,10 @@ class _HomeScreenState extends State<HomeScreen> {
         automaticallyImplyLeading: false,
         title: Row(
           children: [
-            const Icon(Icons.pets, color: AppColors.primaryGreen),
+            const Icon(
+              Icons.pets,
+              color: AppColors.primaryGreen,
+            ),
             const SizedBox(width: 8),
             const Text(
               'Atipattas',
@@ -177,14 +226,17 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
                 onChanged: (value) {
-                  setState(() => _searchText = value);
+                  setState(() {
+                    _searchText = value;
+                  });
                 },
                 decoration: InputDecoration(
                   hintText: 'Buscar animais...',
                   prefixIcon: const Icon(Icons.search),
                   filled: true,
                   fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  contentPadding:
+                  const EdgeInsets.symmetric(vertical: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -197,9 +249,11 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 40,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: _filters.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, __) =>
+                const SizedBox(width: 8),
                 itemBuilder: (context, index) {
                   final filter = _filters[index];
                   final isSelected = filter == _selectedFilter;
@@ -208,12 +262,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: Text(filter),
                     selected: isSelected,
                     onSelected: (_) {
-                      setState(() => _selectedFilter = filter);
+                      setState(() {
+                        _selectedFilter = filter;
+                      });
                     },
                     selectedColor: AppColors.primaryGreen,
                     backgroundColor: Colors.white,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.textDark,
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.textDark,
                       fontWeight: FontWeight.w600,
                     ),
                     side: BorderSide.none,
@@ -234,9 +292,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Expanded(
               child: animalsToShow.isEmpty
-                  ? const Center(child: Text('Nenhum animal encontrado.'))
+                  ? const Center(
+                child: Text('Nenhum animal encontrado.'),
+              )
                   : ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding:
+                const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 itemCount: animalsToShow.length,
                 itemBuilder: (context, index) {
                   final animal = animalsToShow[index];
@@ -244,6 +305,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   return _AnimalCard(
                     animal: animal,
                     onTap: () => _openAnimal(animal),
+                    isFavorite:
+                    _favoritos.contains(animal.name),
+                    onFavoriteTap: () =>
+                        _alternarFavorito(animal.name),
                   );
                 },
               ),
@@ -282,10 +347,14 @@ class _AnimalPreview {
 class _AnimalCard extends StatelessWidget {
   final _AnimalPreview animal;
   final VoidCallback onTap;
+  final bool isFavorite;
+  final VoidCallback onFavoriteTap;
 
   const _AnimalCard({
     required this.animal,
     required this.onTap,
+    required this.isFavorite,
+    required this.onFavoriteTap,
   });
 
   @override
@@ -313,7 +382,10 @@ class _AnimalCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
                       color: AppColors.inputFill,
-                      child: const Icon(Icons.pets, size: 45),
+                      child: const Icon(
+                        Icons.pets,
+                        size: 45,
+                      ),
                     ),
                   ),
                 ),
@@ -339,6 +411,28 @@ class _AnimalCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    tooltip: isFavorite
+                        ? 'Remover dos favoritos'
+                        : 'Adicionar aos favoritos',
+                    onPressed: onFavoriteTap,
+                    style: IconButton.styleFrom(
+                      backgroundColor:
+                      Colors.white.withOpacity(0.9),
+                    ),
+                    icon: Icon(
+                      isFavorite
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: isFavorite
+                          ? Colors.red
+                          : AppColors.primaryGreen,
+                    ),
+                  ),
+                ),
               ],
             ),
             Padding(
@@ -347,7 +441,8 @@ class _AnimalCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                      CrossAxisAlignment.start,
                       children: [
                         Text(
                           animal.name,
@@ -360,12 +455,17 @@ class _AnimalCard extends StatelessWidget {
                         const SizedBox(height: 3),
                         Text(
                           '${animal.breed} • ${animal.age}',
-                          style: const TextStyle(color: AppColors.textGray),
+                          style: const TextStyle(
+                            color: AppColors.textGray,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  Icon(animal.gender, color: AppColors.primaryGreen),
+                  Icon(
+                    animal.gender,
+                    color: AppColors.primaryGreen,
+                  ),
                   const SizedBox(width: 6),
                   const Icon(
                     Icons.arrow_forward_ios,
