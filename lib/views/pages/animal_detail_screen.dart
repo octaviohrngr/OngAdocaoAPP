@@ -1,9 +1,10 @@
 
 import 'package:flutter/material.dart';
+
+import '../../services/favorites_service.dart';
 import 'adoption_form_screen.dart';
 
-
-class AnimalDetailScreen extends StatelessWidget {
+class AnimalDetailScreen extends StatefulWidget {
   final String name;
   final String breed;
   final String age;
@@ -17,7 +18,60 @@ class AnimalDetailScreen extends StatelessWidget {
     required this.imageUrl,
   });
 
+  @override
+  State<AnimalDetailScreen> createState() =>
+      _AnimalDetailScreenState();
+}
+
+class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   static const Color _primaryGreen = Color(0xFF3BAA57);
+
+  final FavoritesService _favoritesService = FavoritesService();
+
+  bool _isFavorite = false;
+  bool _carregandoFavorito = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarFavorito();
+  }
+
+  Future<void> _carregarFavorito() async {
+    final favorito =
+    await _favoritesService.ehFavorito(widget.name);
+
+    if (!mounted) return;
+
+    setState(() {
+      _isFavorite = favorito;
+      _carregandoFavorito = false;
+    });
+  }
+
+  Future<void> _alternarFavorito() async {
+    await _favoritesService.alternarFavorito(widget.name);
+
+    final favorito =
+    await _favoritesService.ehFavorito(widget.name);
+
+    if (!mounted) return;
+
+    setState(() {
+      _isFavorite = favorito;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _isFavorite
+              ? '${widget.name} adicionado aos favoritos!'
+              : '${widget.name} removido dos favoritos.',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,12 +87,15 @@ class AnimalDetailScreen extends StatelessWidget {
                   AspectRatio(
                     aspectRatio: 4 / 3,
                     child: Image.network(
-                      imageUrl,
+                      widget.imageUrl,
                       width: double.infinity,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: Colors.grey.shade200,
-                        child: const Icon(Icons.pets, size: 60),
+                        child: const Icon(
+                          Icons.pets,
+                          size: 60,
+                        ),
                       ),
                     ),
                   ),
@@ -57,12 +114,28 @@ class AnimalDetailScreen extends StatelessWidget {
                       children: [
                         _CircleIconButton(
                           icon: Icons.share,
-                          onTap: () {},
+                          onTap: () {
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Compartilhamento em breve.',
+                                ),
+                              ),
+                            );
+                          },
                         ),
                         const SizedBox(width: 8),
                         _CircleIconButton(
-                          icon: Icons.favorite_border,
-                          onTap: () {},
+                          icon: _isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          onTap: _carregandoFavorito
+                              ? () {}
+                              : _alternarFavorito,
+                          iconColor: _isFavorite
+                              ? Colors.red
+                              : Colors.black87,
                         ),
                       ],
                     ),
@@ -75,7 +148,7 @@ class AnimalDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name,
+                      widget.name,
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -83,7 +156,7 @@ class AnimalDetailScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      breed,
+                      widget.breed,
                       style: const TextStyle(
                         color: _primaryGreen,
                         fontWeight: FontWeight.w600,
@@ -96,7 +169,7 @@ class AnimalDetailScreen extends StatelessWidget {
                       children: [
                         _InfoTag(
                           icon: Icons.cake_outlined,
-                          label: age,
+                          label: widget.age,
                         ),
                         const _InfoTag(
                           icon: Icons.straighten_outlined,
@@ -110,7 +183,7 @@ class AnimalDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Sobre $name',
+                      'Sobre ${widget.name}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -119,10 +192,10 @@ class AnimalDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '$name está esperando uma família que ofereça carinho, '
-                          'atenção e um lar seguro. Cada animal tem sua própria '
-                          'personalidade. Venha conhecê-lo e descubra se vocês '
-                          'combinam!',
+                      '${widget.name} está esperando uma família que ofereça '
+                          'carinho, atenção e um lar seguro. Cada animal tem '
+                          'sua própria personalidade. Venha conhecê-lo e '
+                          'descubra se vocês combinam!',
                       style: TextStyle(
                         color: Colors.grey[700],
                         height: 1.5,
@@ -141,7 +214,8 @@ class AnimalDetailScreen extends StatelessWidget {
                     GridView.count(
                       crossAxisCount: 2,
                       shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
+                      physics:
+                      const NeverScrollableScrollPhysics(),
                       mainAxisSpacing: 10,
                       crossAxisSpacing: 10,
                       childAspectRatio: 2.6,
@@ -200,7 +274,8 @@ class AnimalDetailScreen extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'ONG Tudo por Patas',
@@ -234,7 +309,8 @@ class AnimalDetailScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const AdoptionFormScreen(),
+                              builder: (_) =>
+                              const AdoptionFormScreen(),
                             ),
                           );
                         },
@@ -245,9 +321,12 @@ class AnimalDetailScreen extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _primaryGreen,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                          ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius:
+                            BorderRadius.circular(12),
                           ),
                           textStyle: const TextStyle(
                             fontSize: 15,
@@ -270,10 +349,12 @@ class AnimalDetailScreen extends StatelessWidget {
 class _CircleIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
+  final Color iconColor;
 
   const _CircleIconButton({
     required this.icon,
     required this.onTap,
+    this.iconColor = Colors.black87,
   });
 
   @override
@@ -287,7 +368,11 @@ class _CircleIconButton extends StatelessWidget {
           color: Colors.white.withOpacity(0.9),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 20, color: Colors.black87),
+        child: Icon(
+          icon,
+          size: 20,
+          color: iconColor,
+        ),
       ),
     );
   }
@@ -305,7 +390,10 @@ class _InfoTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 6,
+      ),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(20),
@@ -313,7 +401,11 @@ class _InfoTag extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: Colors.grey[700]),
+          Icon(
+            icon,
+            size: 15,
+            color: Colors.grey[700],
+          ),
           const SizedBox(width: 6),
           Text(
             label,
@@ -346,11 +438,16 @@ class _HealthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+          color: Colors.grey.shade200,
+        ),
       ),
       child: Row(
         children: [
