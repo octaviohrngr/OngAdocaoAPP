@@ -1,13 +1,19 @@
-
 import 'package:flutter/material.dart';
+import '../../viewmodels/profile_viewmodel.dart';
 import '../theme/app_colors.dart';
 import 'adoption_form_screen.dart';
-import 'events_screen.dart';
-import 'home_screen.dart';
+import 'events_view.dart';
+import 'home_view.dart';
 
+class ProfileView extends StatefulWidget {
+  const ProfileView({super.key});
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  @override
+  State<ProfileView> createState() => _ProfileViewState();
+}
+
+class _ProfileViewState extends State<ProfileView> {
+  final ProfileViewModel viewModel = ProfileViewModel();
 
   @override
   Widget build(BuildContext context) {
@@ -94,39 +100,40 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Mariana Silva',
-              style: TextStyle(
+            Text(
+              viewModel.nomeUsuario,
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
                 color: AppColors.textDark,
               ),
             ),
-            const Text(
-              'mariana.silva@email.com',
-              style: TextStyle(
+            Text(
+              viewModel.emailUsuario,
+              style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textGray,
               ),
             ),
             const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 4,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFB8F2D0),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                '✓ Adotante Verificada',
-                style: TextStyle(
-                  color: AppColors.primaryGreen,
-                  fontSize: 10,
+            if (viewModel.adotanteVerificada)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFB8F2D0),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  '✓ Adotante Verificada',
+                  style: TextStyle(
+                    color: AppColors.primaryGreen,
+                    fontSize: 10,
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: () {},
@@ -177,31 +184,21 @@ class ProfileScreen extends StatelessWidget {
                     color: AppColors.primaryGreen,
                     shape: BoxShape.circle,
                   ),
-                  child: const Text(
-                    '3',
-                    style: TextStyle(color: Colors.white, fontSize: 11),
+                  child: Text(
+                    '${viewModel.quantidadeNotificacoes}',
+                    style: const TextStyle(color: Colors.white, fontSize: 11),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            _notificationItem(
-              Icons.pets,
-              'Novo Alerta de Filtro',
-              '2 novos cães de porte médio disponíveis perto de você.',
-              'Há 2 horas',
-            ),
-            _notificationItem(
-              Icons.check_circle_outline,
-              'Pedido Aprovado!',
-              'Seu pedido de adoção para Rex foi aprovado pela ONG Amigos Leais.',
-              'Ontem',
-            ),
-            _notificationItem(
-              Icons.business,
-              'Instituição Verificada',
-              'A Casa dos Focinhos foi verificada.',
-              'Há 2 dias',
+            ...viewModel.notificacoes.map(
+                  (item) => _notificationItem(
+                item['icon'] as IconData,
+                item['title'] as String,
+                item['message'] as String,
+                item['time'] as String,
+              ),
             ),
           ],
         ),
@@ -384,13 +381,12 @@ class ProfileScreen extends StatelessWidget {
       backgroundColor: AppColors.cardBackground,
       selectedFontSize: 10,
       unselectedFontSize: 10,
-
       onTap: (index) {
         if (index == 0) {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (_) => const HomeScreen(),
+              builder: (_) => const HomeView(),
             ),
                 (route) => false,
           );
@@ -398,7 +394,7 @@ class ProfileScreen extends StatelessWidget {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => const EventsScreen(),
+              builder: (_) => const EventsView(),
             ),
           );
         } else if (index == 2) {
@@ -408,7 +404,6 @@ class ProfileScreen extends StatelessWidget {
           );
         }
       },
-
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),

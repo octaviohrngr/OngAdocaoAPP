@@ -2,11 +2,11 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'adoption_form_screen.dart';
-import 'home_screen.dart';
+import 'home_view.dart';
 import 'profile_screen.dart';
 
-class EventsScreen extends StatelessWidget {
-  const EventsScreen({super.key});
+class EventsView extends StatelessWidget {
+  const EventsView({super.key});
 
   static const List<Map<String, String>> events = [
     {
@@ -93,12 +93,12 @@ class EventsScreen extends StatelessWidget {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
-                builder: (_) => const HomeScreen(),
+                builder: (_) => const HomeView(),
               ),
                   (route) => false,
             );
           } else if (index == 1) {
-            // Já está na tela de Eventos.
+
           } else if (index == 2) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -109,7 +109,7 @@ class EventsScreen extends StatelessWidget {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (_) => const ProfileScreen(),
+                builder: (_) => const ProfileView(),
               ),
             );
           }

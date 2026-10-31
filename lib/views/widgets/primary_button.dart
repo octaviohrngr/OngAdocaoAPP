@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ong_adocao_app/views/theme/app_colors.dart';
 
 
-/// Botão principal verde, arredondado, com seta à direita.
-///
-/// Quando [isLoading] é verdadeiro, o botão fica desabilitado e mostra
-/// um indicador de progresso no lugar do texto.
+
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
@@ -31,7 +28,7 @@ class PrimaryButton extends StatelessWidget {
     fontWeight: FontWeight.w600,
   );
 
-  /// Variação usada no botão "CRIAR CONTA".
+
   static const TextStyle uppercaseLabelStyle = TextStyle(
     color: Colors.white,
     fontSize: 14,

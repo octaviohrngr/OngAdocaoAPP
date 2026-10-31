@@ -1,64 +1,56 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:ong_adocao_app/views/theme/app_colors.dart';
+import '../../viewmodels/onboarding_viewmodel.dart';
 import '../../views/widgets/page_dots.dart';
 import '../../views/widgets/primary_button.dart';
-import 'home_screen.dart';
-import 'login_screen.dart';
+import 'home_view.dart';
+import 'login_view.dart';
 
 /// Tela de boas-vindas / onboarding.
-class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+class OnboardingView extends StatefulWidget {
+  const OnboardingView({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  State<OnboardingView> createState() => _OnboardingViewState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
-  Timer? _timer;
+class _OnboardingViewState extends State<OnboardingView> {
+  final OnboardingViewModel viewModel = OnboardingViewModel();
 
   @override
   void initState() {
     super.initState();
 
-    // Aguarda 15 segundos e abre a HomeScreen.
-    _timer = Timer(const Duration(seconds: 15), () {
-      if (!mounted) return;
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const HomeScreen(),
-        ),
-      );
+    viewModel.iniciarTemporizador(() {
+      if (!mounted) return;
+      _goToHome();
     });
   }
 
   void _goToLogin() {
-    // Cancela o temporizador para evitar outra navegação.
-    _timer?.cancel();
+    viewModel.cancelarTemporizador();
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => const LoginScreen(),
+        builder: (_) => const LoginView(),
       ),
     );
   }
 
   void _goToHome() {
-    // Cancela o temporizador se o usuário pular o onboarding.
-    _timer?.cancel();
+    viewModel.cancelarTemporizador();
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => const HomeScreen(),
+        builder: (_) => const HomeView(),
       ),
     );
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    viewModel.dispose();
     super.dispose();
   }
 

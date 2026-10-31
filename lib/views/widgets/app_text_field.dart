@@ -81,7 +81,7 @@ class AppTextField extends StatelessWidget {
   }
 }
 
-/// Rótulo usado acima dos campos de formulário.
+
 class FieldLabel extends StatelessWidget {
   const FieldLabel(this.text, {super.key, this.bold = true});
 
@@ -104,7 +104,7 @@ class FieldLabel extends StatelessWidget {
   }
 }
 
-/// Botão que alterna a visibilidade da senha.
+
 class PasswordToggle extends StatelessWidget {
   const PasswordToggle({super.key, required this.obscured, required this.onPressed});
 

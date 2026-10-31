@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:ong_adocao_app/views/theme/app_colors.dart';
 
-/// Botão contornado usado nos logins sociais (Google, Facebook).
+
 class SocialButton extends StatelessWidget {
   const SocialButton({
     super.key,
