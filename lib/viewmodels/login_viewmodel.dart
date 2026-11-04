@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:ong_adocao_app/lib/repository/auth_repository.dart';
-import 'package:ong_adocao_app/services/api_service.dart';
+import '../data/repository/auth_repository.dart';
+import '../data/services/api_service.dart';
 
 class LoginViewModel extends ChangeNotifier {
   final AuthRepository _repository = AuthRepository();

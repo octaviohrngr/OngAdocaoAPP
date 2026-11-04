@@ -3,9 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:ong_adocao_app/services/auth_session.dart';
+import 'auth_session.dart';
 
-/// Erro devolvido pela API (ou de conexão), já com mensagem pronta para o usuário.
+
 class ApiException implements Exception {
   final String message;
   final int? statusCode;
@@ -16,10 +16,9 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
-/// Cliente HTTP único do app. Só fala com a API, não conhece telas.
+
 class ApiService {
-  // Emulador Android acessa o PC por 10.0.2.2.
-  // Celular físico: troque pelo IP do PC, ex.: 'http://192.168.0.10:3000'.
+
   static String get baseUrl {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return 'http://10.0.2.2:3000';
@@ -83,7 +82,7 @@ class ApiService {
       return data;
     }
 
-    // A API devolve os erros no campo "mensagem"
+
     final mensagem = (data is Map && data['mensagem'] is String)
         ? data['mensagem'] as String
         : 'Erro inesperado (${response.statusCode}).';

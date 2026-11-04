@@ -1,6 +1,6 @@
 import 'package:ong_adocao_app/models/usuario.dart';
-import 'package:ong_adocao_app/services/api_service.dart';
-import 'package:ong_adocao_app/services/auth_session.dart';
+import '../services/api_service.dart';
+import '../services/auth_session.dart';
 
 class AuthRepository {
   final ApiService _api;

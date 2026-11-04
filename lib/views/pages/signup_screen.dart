@@ -1,14 +1,16 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-import '../../services/auth_service.dart';
+import '../../viewmodels/signup_view_model.dart';
 import 'package:ong_adocao_app/views/theme/app_colors.dart';
 import '../../utils/phone_input_formatter.dart';
 import '../../utils/validators.dart';
 import '../../views/widgets/app_text_field.dart';
 import '../../views/widgets/primary_button.dart';
 
-/// Tela 3: criação de conta.
+
+
+
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
@@ -18,7 +20,7 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _auth = const AuthService();
+  final SignupViewModel _viewModel = SignupViewModel();
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -26,11 +28,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
-  bool _acceptedTerms = false;
-  bool _termsError = false;
-  bool _isLoading = false;
+
 
   late final TapGestureRecognizer _termsRecognizer;
   late final TapGestureRecognizer _privacyRecognizer;
@@ -39,11 +37,20 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   void initState() {
     super.initState();
+
+    _viewModel.addListener(_atualizarTela);
+
     _termsRecognizer = TapGestureRecognizer()..onTap = () {};
     _privacyRecognizer = TapGestureRecognizer()..onTap = () {};
-    _loginRecognizer = TapGestureRecognizer()..onTap = () => Navigator.of(context).pop();
+    _loginRecognizer = TapGestureRecognizer()
+      ..onTap = () => Navigator.of(context).pop();
   }
 
+  void _atualizarTela() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
   @override
   void dispose() {
     _nameController.dispose();
@@ -54,44 +61,47 @@ class _SignupScreenState extends State<SignupScreen> {
     _termsRecognizer.dispose();
     _privacyRecognizer.dispose();
     _loginRecognizer.dispose();
+
+
+    _viewModel.removeListener(_atualizarTela);
+    _viewModel.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
+
+  Future<void> _cadastrar() async {
     FocusScope.of(context).unfocus();
 
-    final formOk = _formKey.currentState?.validate() ?? false;
-    setState(() => _termsError = !_acceptedTerms);
+    final sucesso = await _viewModel.cadastrarUsuario(
+      formularioValido:
+      _formKey.currentState?.validate() ?? false,
+      nome: _nameController.text,
+      email: _emailController.text,
+      telefone: _phoneController.text,
+      senha: _passwordController.text,
+    );
 
-    if (!formOk || !_acceptedTerms) return;
+    if (!mounted) return;
 
-    setState(() => _isLoading = true);
-
-    try {
-      await _auth.signUp(
-        name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        phone: _phoneController.text,
-        password: _passwordController.text,
-      );
-
-      if (!mounted) return;
-      // Volta ao login para o usuário entrar com a conta recém-criada.
+    if (sucesso) {
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text('Conta criada! Faça login para continuar.')),
-        );
-    } on AuthException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(e.message)));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Conta criada! Faça login para continuar.',
+          ),
+        ),
+      );
+    } else if (_viewModel.mensagemErro != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_viewModel.mensagemErro!),
+        ),
+      );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +158,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         icon: Icons.person_outline,
                         textInputAction: TextInputAction.next,
                         validator: Validators.fullName,
-                        enabled: !_isLoading,
+                        enabled: !_viewModel.isLoading,
                       ),
                       const SizedBox(height: 18),
                       const FieldLabel('E-mail'),
@@ -159,7 +169,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                         validator: Validators.email,
-                        enabled: !_isLoading,
+                        enabled: !_viewModel.isLoading,
                       ),
                       const SizedBox(height: 18),
                       const FieldLabel('Telefone'),
@@ -171,7 +181,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         textInputAction: TextInputAction.next,
                         inputFormatters: [PhoneInputFormatter()],
                         validator: Validators.phone,
-                        enabled: !_isLoading,
+                        enabled: !_viewModel.isLoading,
                       ),
                       const SizedBox(height: 18),
                       const FieldLabel('Senha'),
@@ -179,13 +189,13 @@ class _SignupScreenState extends State<SignupScreen> {
                         controller: _passwordController,
                         hint: '',
                         icon: Icons.lock_outline,
-                        obscure: _obscurePassword,
+                        obscure: _viewModel.obscurePassword,
                         textInputAction: TextInputAction.next,
                         validator: Validators.password,
-                        enabled: !_isLoading,
+                        enabled: !_viewModel.isLoading,
                         suffix: PasswordToggle(
-                          obscured: _obscurePassword,
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          obscured: _viewModel.obscurePassword,
+                          onPressed: _viewModel.alternarSenha,
                         ),
                       ),
                       const SizedBox(height: 18),
@@ -194,19 +204,17 @@ class _SignupScreenState extends State<SignupScreen> {
                         controller: _confirmPasswordController,
                         hint: '',
                         icon: Icons.lock_outline,
-                        obscure: _obscureConfirmPassword,
+                        obscure: _viewModel.obscurePassword,
                         textInputAction: TextInputAction.done,
                         validator: (value) => Validators.confirmPassword(
                           value,
                           _passwordController.text,
                         ),
-                        enabled: !_isLoading,
-                        onFieldSubmitted: (_) => _submit(),
+                          enabled: !_viewModel.isLoading,
+                        onFieldSubmitted: (_) => _cadastrar(),
                         suffix: PasswordToggle(
-                          obscured: _obscureConfirmPassword,
-                          onPressed: () => setState(
-                            () => _obscureConfirmPassword = !_obscureConfirmPassword,
-                          ),
+                          obscured: _viewModel.obscureConfirmPassword,
+                          onPressed: _viewModel.alternarConfirmacao,
                         ),
                       ),
                       const SizedBox(height: 18),
@@ -215,8 +223,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       PrimaryButton(
                         label: 'CRIAR CONTA',
                         labelStyle: PrimaryButton.uppercaseLabelStyle,
-                        isLoading: _isLoading,
-                        onPressed: _submit,
+                        isLoading: _viewModel.isLoading,
+                        onPressed: _cadastrar,
                       ),
                       const SizedBox(height: 20),
                       Center(
@@ -260,19 +268,20 @@ class _SignupScreenState extends State<SignupScreen> {
             SizedBox(
               width: 22,
               height: 22,
-              child: Checkbox(
-                value: _acceptedTerms,
+              child:
+              Checkbox(
+                value: _viewModel.acceptedTerms,
                 activeColor: AppColors.primaryGreen,
-                isError: _termsError,
+                isError: _viewModel.termsError,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                onChanged: _isLoading
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                onChanged: _viewModel.isLoading
                     ? null
-                    : (value) => setState(() {
-                          _acceptedTerms = value ?? false;
-                          if (_acceptedTerms) _termsError = false;
-                        }),
+                    : _viewModel.alterarTermos,
               ),
+
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -304,7 +313,7 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
           ],
         ),
-        if (_termsError)
+        if (_viewModel.termsError)
           Padding(
             padding: const EdgeInsets.only(top: 6, left: 32),
             child: Text(

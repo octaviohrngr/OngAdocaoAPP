@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ong_adocao_app/models/animal.dart';
-import 'package:ong_adocao_app/services/auth_session.dart';
-import 'package:ong_adocao_app/services/favorites_service.dart';
+import 'package:ong_adocao_app/data/services/auth_session.dart';
+import 'package:ong_adocao_app/data/services/favorites_service.dart';
 
 class HomeViewModel extends ChangeNotifier {
   final FavoritesService _favoritesService = FavoritesService();
