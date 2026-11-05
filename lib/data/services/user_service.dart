@@ -2,6 +2,9 @@
 import 'package:dio/dio.dart';
 import '../network/requester.dart';
 
+
+
+
 class UserService {
   final Dio _dio = Requester.dio;
 
@@ -18,8 +21,8 @@ class UserService {
         'email': email,
         'telefone': telefone,
         'senha': senha,
+        'tipo': 'adotante',
       },
     );
   }
 }
-

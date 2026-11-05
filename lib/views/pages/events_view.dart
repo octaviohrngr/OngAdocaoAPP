@@ -1,45 +1,34 @@
 
 import 'package:flutter/material.dart';
+
+import '../../models/evento.dart';
+import '../../viewmodels/events_viewmodel.dart';
 import '../theme/app_colors.dart';
 import 'adoption_form_screen.dart';
 import 'home_view.dart';
 import 'profile_screen.dart';
 
-class EventsView extends StatelessWidget {
+class EventsView extends StatefulWidget {
   const EventsView({super.key});
 
-  static const List<Map<String, String>> events = [
-    {
-      'title': 'Feira de Adoção Atipattas',
-      'date': '18 OUT 2026',
-      'time': '09:00 às 15:00',
-      'location': 'Praça da Matriz, Atibaia',
-      'description':
-      'Conheça cães e gatos que estão esperando por uma família. '
-          'Converse com os voluntários e descubra como adotar.',
-      'icon': 'pets',
-    },
-    {
-      'title': 'Encontro de Tutores',
-      'date': '24 OUT 2026',
-      'time': '14:00 às 17:00',
-      'location': 'Parque Edmundo Zanoni, Atibaia',
-      'description':
-      'Uma tarde para tutores, famílias e seus animais se encontrarem '
-          'e compartilharem experiências.',
-      'icon': 'groups',
-    },
-    {
-      'title': 'Campanha de Arrecadação',
-      'date': '31 OUT 2026',
-      'time': '10:00 às 16:00',
-      'location': 'Centro de Atibaia',
-      'description':
-      'Ajude os animais acolhidos doando ração, cobertores e produtos '
-          'de higiene.',
-      'icon': 'volunteer',
-    },
-  ];
+  @override
+  State<EventsView> createState() => _EventsViewState();
+}
+
+class _EventsViewState extends State<EventsView> {
+  final EventsViewModel viewModel = EventsViewModel();
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel.carregarEventos();
+  }
+
+  @override
+  void dispose() {
+    viewModel.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,32 +43,87 @@ class EventsView extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text(
-            'Encontre seu próximo evento',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Participe das ações e ajude os animais da nossa região.',
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textGray,
-            ),
-          ),
-          const SizedBox(height: 20),
-          ...events.map(
-                (event) => _eventCard(context, event),
-          ),
-        ],
-      ),
+      body: ListenableBuilder(
+        listenable: viewModel,
+        builder: (context, _) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Text(
+                  'Encontre seu próximo evento',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 6, 16, 20),
+                child: Text(
+                  'Participe das ações e ajude os animais da nossa região.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textGray,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: viewModel.isLoading
+                    ? const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryGreen,
+                  ),
+                )
+                    : viewModel.mensagemErro != null
+                    ? Center(
+                  child: Column(
+                    mainAxisAlignment:
+                    MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        viewModel.mensagemErro!,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: viewModel.carregarEventos,
+                        child: const Text(
+                          'Tentar novamente',
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+                    : viewModel.eventos.isEmpty
+                    ? const Center(
+                  child: Text(
+                    'Nenhum evento encontrado.',
+                  ),
+                )
+                    : ListView.builder(
+                  padding:
+                  const EdgeInsets.fromLTRB(
+                    16, 0, 16, 16,
+                  ),
+                  itemCount: viewModel.eventos.length,
+                  itemBuilder: (context, index) {
+                    final evento =
+                    viewModel.eventos[index];
 
+                    return _eventCard(
+                      context,
+                      evento,
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 1,
         type: BottomNavigationBarType.fixed,
@@ -97,12 +141,12 @@ class EventsView extends StatelessWidget {
               ),
                   (route) => false,
             );
-          } else if (index == 1) {
-
           } else if (index == 2) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Central de notificações em breve.'),
+                content: Text(
+                  'Central de notificações em breve.',
+                ),
               ),
             );
           } else if (index == 3) {
@@ -137,13 +181,12 @@ class EventsView extends StatelessWidget {
           ),
         ],
       ),
-
     );
   }
 
   Widget _eventCard(
       BuildContext context,
-      Map<String, String> event,
+      Evento evento,
       ) {
     return Card(
       color: AppColors.cardBackground,
@@ -156,16 +199,32 @@ class EventsView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+
           Container(
             height: 125,
             width: double.infinity,
             color: AppColors.onboardingHero,
-            child: Icon(
-              _eventIcon(event['icon']!),
+            child: evento.foto.isNotEmpty
+                ? Image.network(
+              evento.foto,
+              width: double.infinity,
+              height: 125,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Icon(
+                  viewModel.iconeEvento(evento),
+                  size: 58,
+                  color: AppColors.accentGreen,
+                );
+              },
+            )
+                : Icon(
+              viewModel.iconeEvento(evento),
               size: 58,
               color: AppColors.accentGreen,
             ),
           ),
+
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -181,7 +240,7 @@ class EventsView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    event['date']!,
+                    viewModel.formatarData(evento.dataHora),
                     style: const TextStyle(
                       color: AppColors.primaryGreen,
                       fontWeight: FontWeight.bold,
@@ -191,7 +250,7 @@ class EventsView extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  event['title']!,
+                  evento.titulo,
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
@@ -199,12 +258,18 @@ class EventsView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _eventInfo(Icons.access_time, event['time']!),
+                _eventInfo(
+                  Icons.access_time,
+                  viewModel.formatarHorario(evento.dataHora),
+                ),
                 const SizedBox(height: 7),
-                _eventInfo(Icons.location_on_outlined, event['location']!),
+                _eventInfo(
+                  Icons.location_on_outlined,
+                  evento.localizacao,
+                ),
                 const SizedBox(height: 12),
                 Text(
-                  event['description']!,
+                  evento.descricao,
                   style: const TextStyle(
                     fontSize: 13,
                     height: 1.4,
@@ -219,7 +284,8 @@ class EventsView extends StatelessWidget {
                       backgroundColor: AppColors.primaryGreen,
                       foregroundColor: Colors.white,
                     ),
-                    onPressed: () => _showDetails(context, event),
+                    onPressed: () =>
+                        _showDetails(context, evento),
                     child: const Text('Ver detalhes'),
                   ),
                 ),
@@ -235,7 +301,11 @@ class EventsView extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 17, color: AppColors.accentGreen),
+        Icon(
+          icon,
+          size: 17,
+          color: AppColors.accentGreen,
+        ),
         const SizedBox(width: 7),
         Expanded(
           child: Text(
@@ -250,20 +320,9 @@ class EventsView extends StatelessWidget {
     );
   }
 
-  IconData _eventIcon(String icon) {
-    switch (icon) {
-      case 'groups':
-        return Icons.groups;
-      case 'volunteer':
-        return Icons.volunteer_activism;
-      default:
-        return Icons.pets;
-    }
-  }
-
   void _showDetails(
       BuildContext context,
-      Map<String, String> event,
+      Evento evento,
       ) {
     showModalBottomSheet(
       context: context,
@@ -278,7 +337,7 @@ class EventsView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  event['title']!,
+                  evento.titulo,
                   style: const TextStyle(
                     fontSize: 21,
                     fontWeight: FontWeight.bold,
@@ -286,11 +345,15 @@ class EventsView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text('Data: ${event['date']}'),
-                Text('Horário: ${event['time']}'),
-                Text('Local: ${event['location']}'),
+                Text(
+                  'Data: ${viewModel.formatarData(evento.dataHora)}',
+                ),
+                Text(
+                  'Horário: ${viewModel.formatarHorario(evento.dataHora)}',
+                ),
+                Text('Local: ${evento.localizacao}'),
                 const SizedBox(height: 12),
-                Text(event['description']!),
+                Text(evento.descricao),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
@@ -304,11 +367,14 @@ class EventsView extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const AdoptionFormScreen(),
+                          builder: (_) =>
+                          const AdoptionFormScreen(),
                         ),
                       );
                     },
-                    child: const Text('Tenho interesse em adotar'),
+                    child: const Text(
+                      'Tenho interesse em adotar',
+                    ),
                   ),
                 ),
               ],

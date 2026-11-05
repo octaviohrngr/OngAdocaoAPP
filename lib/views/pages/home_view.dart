@@ -22,6 +22,8 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
+
+    viewModel.carregarAnimais();
     viewModel.carregarFavoritos();
   }
 
@@ -127,7 +129,7 @@ class _HomeViewState extends State<HomeView> {
         ],
       ),
       body: SafeArea(
-        // Reconstrói a tela quando o ViewModel avisar que algo mudou
+
         child: ListenableBuilder(
           listenable: viewModel,
           builder: (context, _) {
@@ -206,8 +208,35 @@ class _HomeViewState extends State<HomeView> {
                     ),
                   ),
                 ),
+
                 Expanded(
-                  child: animalsToShow.isEmpty
+                  child: viewModel.isLoading
+                      ? const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryGreen,
+                    ),
+                  )
+                      : viewModel.mensagemErro != null
+                      ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          viewModel.mensagemErro!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: viewModel.carregarAnimais,
+                          child: const Text('Tentar novamente'),
+                        ),
+                      ],
+                    ),
+                  )
+                      : animalsToShow.isEmpty
                       ? const Center(
                     child: Text('Nenhum animal encontrado.'),
                   )
@@ -219,7 +248,9 @@ class _HomeViewState extends State<HomeView> {
 
                       return _AnimalCard(
                         animal: animal,
-                        idade: viewModel.formatarIdade(animal.idadeEstimada),
+                        idade: viewModel.formatarIdade(
+                          animal.idadeEstimada,
+                        ),
                         onTap: () => _openAnimal(animal),
                         isFavorite: viewModel.isFavorito(animal.nome),
                         onFavoriteTap: () =>
@@ -228,6 +259,7 @@ class _HomeViewState extends State<HomeView> {
                     },
                   ),
                 ),
+
               ],
             );
           },
