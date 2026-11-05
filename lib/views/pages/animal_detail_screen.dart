@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../services/favorites_service.dart';
+import '../../data/services/favorites_service.dart';
 import 'adoption_form_screen.dart';
 
 class AnimalDetailScreen extends StatefulWidget {

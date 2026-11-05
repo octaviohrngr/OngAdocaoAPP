@@ -4,7 +4,7 @@ import 'package:ong_adocao_app/views/theme/app_colors.dart';
 
 
 
-/// Indicador de páginas do onboarding.
+
 class PageDots extends StatelessWidget {
   const PageDots({super.key, required this.count, required this.currentIndex});
 
