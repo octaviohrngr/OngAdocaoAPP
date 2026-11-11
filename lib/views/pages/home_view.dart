@@ -6,8 +6,9 @@ import '../theme/app_colors.dart';
 import '../widgets/app_bottom_navigation_bar.dart';
 import 'login_view.dart';
 import 'animal_detail_screen.dart';
-import 'events_view.dart';
+
 import 'profile_screen.dart';
+import 'events_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -48,11 +49,8 @@ class _HomeViewState extends State<HomeView> {
       context,
       MaterialPageRoute(
         builder: (_) => AnimalDetailScreen(
-          name: animal.nome,
-          breed: animal.raca,
-          age: viewModel.formatarIdade(animal.idadeEstimada),
-          imageUrl: animal.foto1,
-        ),
+          animal: animal,
+        )
       ),
     ).then((_) {
       viewModel.carregarFavoritos();
@@ -69,13 +67,13 @@ class _HomeViewState extends State<HomeView> {
           builder: (_) => const EventsView(),
         ),
       );
-    } else if (index == 2) {
+    } else if (index == 2 && viewModel.usuarioLogado) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Central de alertas em breve.'),
         ),
       );
-    } else if (index == 3) {
+    } else if (index == 3 && viewModel.usuarioLogado) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -112,18 +110,29 @@ class _HomeViewState extends State<HomeView> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Meu perfil',
+            tooltip: viewModel.usuarioLogado
+                ? 'Meu perfil'
+                : 'Fazer login',
             icon: const Icon(
               Icons.person_outline,
               color: AppColors.primaryGreen,
             ),
             onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ProfileView(),
-                ),
-              );
+              if (viewModel.usuarioLogado) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProfileView(),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LoginView(),
+                  ),
+                );
+              }
             },
           ),
         ],
@@ -268,6 +277,7 @@ class _HomeViewState extends State<HomeView> {
       bottomNavigationBar: AppBottomNavigationBar(
         currentIndex: 0,
         onTap: _navigate,
+        usuarioLogado: viewModel.usuarioLogado,
       ),
     );
   }

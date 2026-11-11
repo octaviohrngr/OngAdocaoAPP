@@ -6,10 +6,38 @@ import '../network/requester.dart';
 class AnimalRepository {
   final AnimalService _service = AnimalService();
 
-  Future<List<Animal>> buscarAnimais() async {
-    final response = await _service.buscarAnimais();
+  Future<void> cadastrarAnimal(
+      Map<String, dynamic> dados,
+      List<int> foto1,
+      List<int> foto2,
+      String nomeFoto1,
+      String nomeFoto2,
+      ) async {
+    await _service.cadastrarAnimal(
+      dados,
+      foto1,
+      foto2,
+      nomeFoto1,
+      nomeFoto2,
+    );
+  }
 
-    final dynamic dados = response.data;
+
+  Future<void> editarAnimal(
+      String id,
+      Map<String, dynamic> dados,
+      ) async {
+    await _service.editarAnimal(id, dados);
+  }
+
+  Future<void> excluirAnimal(String id) async {
+    await _service.excluirAnimal(id);
+  }
+
+
+  Future<List<Animal>> buscarAnimais() async {
+    final dados = await _service.buscarAnimais();
+
 
 
     final dynamic lista = dados is List
@@ -54,9 +82,16 @@ class AnimalRepository {
       return foto;
     }
 
-    final baseUrl = Requester.dio.options.baseUrl;
-    final caminho = foto.startsWith('/') ? foto : '/$foto';
+    final baseUrl = Requester().baseUrl;
 
-    return '$baseUrl$caminho';
+    final nomeArquivo = foto.startsWith('/')
+        ? foto.substring(1)
+        : foto;
+
+    final caminho = nomeArquivo.startsWith('uploads/')
+        ? nomeArquivo
+        : 'uploads/$nomeArquivo';
+
+    return '$baseUrl/$caminho';
   }
 }
