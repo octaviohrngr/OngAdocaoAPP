@@ -1,12 +1,14 @@
 
 import 'package:flutter/material.dart';
-
+import '../widgets/app_bottom_navigation_bar.dart';
+import '../../data/services/auth_session.dart';
 import '../../models/evento.dart';
 import '../../viewmodels/events_viewmodel.dart';
 import '../theme/app_colors.dart';
 import 'adoption_form_screen.dart';
 import 'home_view.dart';
 import 'profile_screen.dart';
+import 'login_view.dart';
 
 class EventsView extends StatefulWidget {
   const EventsView({super.key});
@@ -35,13 +37,55 @@ class _EventsViewState extends State<EventsView> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.primaryGreen,
-        title: const Text(
-          'Eventos',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+
+        title: const Row(
+          children: [
+            Icon(
+              Icons.pets,
+              color: AppColors.primaryGreen,
+            ),
+            SizedBox(width: 8),
+            Text(
+              'Atipattas',
+              style: TextStyle(
+                color: AppColors.textDark,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ],
         ),
-        centerTitle: true,
+
+        actions: [
+          IconButton(
+            tooltip: AuthSession.token != null &&
+                AuthSession.token!.isNotEmpty
+                ? 'Meu perfil'
+                : 'Fazer login',
+
+            icon: const Icon(
+              Icons.person_outline,
+              color: AppColors.primaryGreen,
+            ),
+
+            onPressed: () {
+              final usuarioLogado = AuthSession.token != null &&
+                  AuthSession.token!.isNotEmpty;
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => usuarioLogado
+                      ? const ProfileView()
+                      : const LoginView(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: ListenableBuilder(
         listenable: viewModel,
@@ -124,32 +168,29 @@ class _EventsViewState extends State<EventsView> {
           );
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: AppBottomNavigationBar(
         currentIndex: 1,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.cardBackground,
-        selectedItemColor: AppColors.primaryGreen,
-        unselectedItemColor: AppColors.textGray,
-        selectedFontSize: 10,
-        unselectedFontSize: 10,
+        usuarioLogado: AuthSession.token != null &&
+            AuthSession.token!.isNotEmpty,
         onTap: (index) {
           if (index == 0) {
-            Navigator.pushAndRemoveUntil(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder: (_) => const HomeView(),
               ),
-                  (route) => false,
             );
-          } else if (index == 2) {
+          } else if (index == 2 &&
+              AuthSession.token != null &&
+              AuthSession.token!.isNotEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text(
-                  'Central de notificações em breve.',
-                ),
+                content: Text('Central de notificações em breve.'),
               ),
             );
-          } else if (index == 3) {
+          } else if (index == 3 &&
+              AuthSession.token != null &&
+              AuthSession.token!.isNotEmpty) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -158,28 +199,6 @@ class _EventsViewState extends State<EventsView> {
             );
           }
         },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.event_note_outlined),
-            activeIcon: Icon(Icons.event_note),
-            label: 'Eventos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_none),
-            activeIcon: Icon(Icons.notifications),
-            label: 'Alertas',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-        ],
       ),
     );
   }
@@ -364,11 +383,11 @@ class _EventsViewState extends State<EventsView> {
                     ),
                     onPressed: () {
                       Navigator.pop(context);
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                          const AdoptionFormScreen(),
+                          builder: (_) => const HomeView(),
                         ),
                       );
                     },

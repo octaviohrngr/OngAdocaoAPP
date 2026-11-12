@@ -4,6 +4,7 @@ import 'package:ong_adocao_app/views/pages/home_view.dart';
 import 'package:ong_adocao_app/views/pages/signup_screen.dart';
 import 'package:ong_adocao_app/views/theme/app_colors.dart';
 import 'admin_animals_view.dart';
+import 'forgot_password_view.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -192,7 +193,33 @@ class _LoginViewState extends State<LoginView> {
                         ),
                         validator: viewModel.validatePassword,
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 8),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: viewModel.isLoading
+                              ? null
+                              : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ForgotPasswordView(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'Esqueceu a senha?',
+                            style: TextStyle(
+                              color: AppColors.primaryGreen,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
                       SizedBox(
                         height: 54,
                         child: ElevatedButton(

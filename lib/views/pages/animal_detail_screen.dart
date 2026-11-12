@@ -1,21 +1,17 @@
 
 import 'package:flutter/material.dart';
 
+import '../../models/animal.dart';
 import '../../data/services/favorites_service.dart';
+import '../../data/network/requester.dart';
 import 'adoption_form_screen.dart';
 
 class AnimalDetailScreen extends StatefulWidget {
-  final String name;
-  final String breed;
-  final String age;
-  final String imageUrl;
+  final Animal animal;
 
   const AnimalDetailScreen({
     super.key,
-    required this.name,
-    required this.breed,
-    required this.age,
-    required this.imageUrl,
+    required this.animal,
   });
 
   @override
@@ -31,6 +27,22 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   bool _isFavorite = false;
   bool _carregandoFavorito = true;
 
+  String _urlFoto(String foto) {
+    if (foto.startsWith('http://') ||
+        foto.startsWith('https://')) {
+      return foto;
+    }
+
+    final base = Requester()
+        .baseUrl
+        .replaceAll(RegExp(r'/$'), '');
+
+    final caminho =
+    foto.startsWith('/') ? foto : '/$foto';
+
+    return '$base$caminho';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -38,8 +50,9 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   }
 
   Future<void> _carregarFavorito() async {
-    final favorito =
-    await _favoritesService.ehFavorito(widget.name);
+    final favorito = await _favoritesService.ehFavorito(
+      widget.animal.nome,
+    );
 
     if (!mounted) return;
 
@@ -50,10 +63,13 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   }
 
   Future<void> _alternarFavorito() async {
-    await _favoritesService.alternarFavorito(widget.name);
+    await _favoritesService.alternarFavorito(
+      widget.animal.nome,
+    );
 
-    final favorito =
-    await _favoritesService.ehFavorito(widget.name);
+    final favorito = await _favoritesService.ehFavorito(
+      widget.animal.nome,
+    );
 
     if (!mounted) return;
 
@@ -65,8 +81,8 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
       SnackBar(
         content: Text(
           _isFavorite
-              ? '${widget.name} adicionado aos favoritos!'
-              : '${widget.name} removido dos favoritos.',
+              ? '${widget.animal.nome} adicionado aos favoritos!'
+              : '${widget.animal.nome} removido dos favoritos.',
         ),
         duration: const Duration(seconds: 2),
       ),
@@ -87,18 +103,21 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                   AspectRatio(
                     aspectRatio: 4 / 3,
                     child: Image.network(
-                      widget.imageUrl,
+                      _urlFoto(widget.animal.foto1),
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: Colors.grey.shade200,
-                        child: const Icon(
-                          Icons.pets,
-                          size: 60,
-                        ),
-                      ),
+                      errorBuilder: (_, __, ___) {
+                        return Container(
+                          color: Colors.grey.shade200,
+                          child: const Icon(
+                            Icons.pets,
+                            size: 60,
+                          ),
+                        );
+                      },
                     ),
                   ),
+
                   Positioned(
                     top: 12,
                     left: 12,
@@ -107,6 +126,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                       onTap: () => Navigator.maybePop(context),
                     ),
                   ),
+
                   Positioned(
                     top: 12,
                     right: 12,
@@ -125,7 +145,9 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                             );
                           },
                         ),
+
                         const SizedBox(width: 8),
+
                         _CircleIconButton(
                           icon: _isFavorite
                               ? Icons.favorite
@@ -142,66 +164,79 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                   ),
                 ],
               ),
+
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.name,
+                      widget.animal.nome,
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: Colors.grey[900],
                       ),
                     ),
+
                     Text(
-                      widget.breed,
+                      widget.animal.raca,
                       style: const TextStyle(
                         color: _primaryGreen,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
                         _InfoTag(
                           icon: Icons.cake_outlined,
-                          label: widget.age,
+                          label:
+                          '${widget.animal.idadeEstimada} anos',
                         ),
-                        const _InfoTag(
+
+                        _InfoTag(
                           icon: Icons.straighten_outlined,
-                          label: 'Porte grande',
+                          label:
+                          'Porte ${widget.animal.porte}',
                         ),
-                        const _InfoTag(
-                          icon: Icons.content_cut_outlined,
-                          label: 'Pelagem longa',
+
+                        _InfoTag(
+                          icon: Icons.pets_outlined,
+                          label: widget.animal.especie,
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 20),
+
                     Text(
-                      'Sobre ${widget.name}',
+                      'Sobre ${widget.animal.nome}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.grey[900],
                       ),
                     ),
+
                     const SizedBox(height: 8),
+
                     Text(
-                      '${widget.name} está esperando uma família que ofereça '
-                          'carinho, atenção e um lar seguro. Cada animal tem '
-                          'sua própria personalidade. Venha conhecê-lo e '
-                          'descubra se vocês combinam!',
+                      widget.animal.temperamento.isNotEmpty
+                          ? widget.animal.temperamento
+                          : 'Temperamento não informado.',
                       style: TextStyle(
                         color: Colors.grey[700],
                         height: 1.5,
                       ),
                     ),
+
                     const SizedBox(height: 20),
+
                     Text(
                       'Saúde e Cuidados',
                       style: TextStyle(
@@ -210,98 +245,28 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                         color: Colors.grey[900],
                       ),
                     ),
+
                     const SizedBox(height: 12),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics:
-                      const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 2.6,
-                      children: const [
-                        _HealthCard(
-                          icon: Icons.vaccines_outlined,
-                          title: 'Vacinado',
-                          subtitle: 'Em dia',
-                          ok: true,
-                        ),
-                        _HealthCard(
-                          icon: Icons.shield_outlined,
-                          title: 'Vermifugado',
-                          subtitle: 'Em dia',
-                          ok: true,
-                        ),
-                        _HealthCard(
-                          icon: Icons.cut_outlined,
-                          title: 'Castrado',
-                          subtitle: 'Pendente (idade)',
-                          ok: false,
-                        ),
-                        _HealthCard(
-                          icon: Icons.memory_outlined,
-                          title: 'Microchip',
-                          subtitle: 'Não possui',
-                          ok: false,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Onde ele está?',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[900],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(
-                        children: [
-                          const CircleAvatar(
-                            backgroundColor: Colors.white,
-                            child: Icon(
-                              Icons.location_on_outlined,
-                              color: _primaryGreen,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'ONG Tudo por Patas',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey[900],
-                                  ),
-                                ),
-                                Text(
-                                  'Atibaia, SP',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right,
-                            color: Colors.grey[400],
-                          ),
-                        ],
+                      child: Text(
+                        widget.animal.historicoVacina.isNotEmpty
+                            ? widget.animal.historicoVacina
+                            : 'Histórico de vacinação não informado.',
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                        ),
                       ),
                     ),
+
                     const SizedBox(height: 24),
+
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -310,7 +275,9 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
-                              const AdoptionFormScreen(),
+                                  AdoptionFormScreen(
+                                    animal: widget.animal,
+                                  ),
                             ),
                           );
                         },
@@ -321,7 +288,8 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _primaryGreen,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
+                          padding:
+                          const EdgeInsets.symmetric(
                             vertical: 14,
                           ),
                           shape: RoundedRectangleBorder(
@@ -406,83 +374,14 @@ class _InfoTag extends StatelessWidget {
             size: 15,
             color: Colors.grey[700],
           ),
+
           const SizedBox(width: 6),
+
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[800],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HealthCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool ok;
-
-  const _HealthCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.ok,
-  });
-
-  static const Color _primaryGreen = Color(0xFF3BAA57);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 8,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.shade200,
-        ),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: ok
-                ? _primaryGreen.withOpacity(0.15)
-                : Colors.grey.shade300,
-            child: Icon(
-              icon,
-              size: 16,
-              color: ok ? _primaryGreen : Colors.grey[600],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
             ),
           ),
         ],

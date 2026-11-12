@@ -23,7 +23,8 @@ class ApiService {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return 'http://10.0.2.2:3000';
     }
-    return 'http://localhost:3000';
+    //return 'http://localhost:3000';
+    return 'http://10.68.75.42:3000';
   }
 
   Future<dynamic> get(String path) => _send('GET', path);

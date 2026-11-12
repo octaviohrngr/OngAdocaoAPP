@@ -1,28 +1,35 @@
 
-import 'package:dio/dio.dart';
 import '../network/requester.dart';
 
-
-
-
 class UserService {
-  final Dio _dio = Requester.dio;
+  final Requester _requester = Requester();
 
-  Future<Response> cadastrarUsuario({
+  Future<dynamic> cadastrarUsuario({
     required String nome,
     required String email,
     required String telefone,
     required String senha,
   }) async {
-    return await _dio.post(
+    return await _requester.post(
       '/usuarios',
-      data: {
+      {
         'nome': nome,
         'email': email,
         'telefone': telefone,
         'senha': senha,
         'tipo': 'adotante',
       },
+    );
+  }
+
+
+  Future<dynamic> atualizarUsuario(
+      String id,
+      Map<String, dynamic> dados,
+      ) async {
+    return await _requester.put(
+      '/usuarios/$id',
+      dados,
     );
   }
 }

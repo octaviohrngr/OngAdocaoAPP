@@ -1,54 +1,89 @@
 
 import '../../models/evento.dart';
 import '../services/evento_service.dart';
-import '../network/requester.dart';
+
 
 class EventoRepository {
   final EventoService _service = EventoService();
 
-  String _urlFoto(dynamic valor) {
-    final foto = (valor ?? '').toString();
-
-    if (foto.isEmpty) return '';
-
-    if (foto.startsWith('http://') ||
-        foto.startsWith('https://')) {
-      return foto;
-    }
-
-    final baseUrl = Requester.dio.options.baseUrl;
-    final caminho = foto.startsWith('/') ? foto : '/$foto';
-
-    return '$baseUrl$caminho';
-  }
-
   Future<List<Evento>> buscarEventos() async {
-    final response = await _service.buscarEventos();
-    final dynamic dados = response.data;
+    final resposta = await _service.buscarEventos();
 
-    final dynamic lista = dados is List
-        ? dados
-        : dados is Map
-        ? dados['eventos']
-        : null;
+    final dynamic dados;
 
-    if (lista is! List) {
-      throw const FormatException(
-        'Formato da lista de eventos inválido.',
-      );
+    if (resposta is List) {
+      dados = resposta;
+    } else if (resposta is Map) {
+      dados = resposta['eventos'];
+    } else {
+      throw Exception('Resposta inválida da API.');
     }
 
-    return lista.map((item) {
+    if (dados is! List) {
+      throw Exception('Lista de eventos inválida.');
+    }
+
+    return dados.map((item) {
       final json = Map<String, dynamic>.from(item as Map);
+      final evento = Evento.fromJson(json);
+
+      String foto = evento.foto;
+
+      if (foto.isNotEmpty &&
+          !foto.startsWith('http://') &&
+          !foto.startsWith('https://')) {
+
+        final nomeArquivo = foto.startsWith('/')
+            ? foto.substring(1)
+            : foto;
+
+        final caminho = nomeArquivo.startsWith('uploads/')
+            ? nomeArquivo
+            : 'uploads/$nomeArquivo';
+
+        final baseUrl = _service.baseUrl.replaceFirst(RegExp(r'/$'), '');
+
+        foto = '$baseUrl/$caminho';
+      }
 
       return Evento(
-        id: (json['_id'] ?? json['id'] ?? '').toString(),
-        titulo: (json['titulo'] ?? '').toString(),
-        dataHora: DateTime.parse(json['dataHora'].toString()),
-        localizacao: (json['localizacao'] ?? '').toString(),
-        descricao: (json['descricao'] ?? '').toString(),
-        foto: _urlFoto(json['foto']),
+        id: evento.id,
+        titulo: evento.titulo,
+        dataHora: evento.dataHora,
+        localizacao: evento.localizacao,
+        descricao: evento.descricao,
+        foto: foto,
       );
     }).toList();
+  }
+
+  Future<void> cadastrarEvento(
+      Map<String, dynamic> dados, {
+        List<int>? foto,
+        String? nomeFoto,
+      }) async {
+    await _service.cadastrarEvento(
+      dados,
+      foto: foto,
+      nomeFoto: nomeFoto,
+    );
+  }
+
+  Future<void> editarEvento(
+      String id,
+      Map<String, dynamic> dados, {
+        List<int>? foto,
+        String? nomeFoto,
+      }) async {
+    await _service.editarEvento(
+      id,
+      dados,
+      foto: foto,
+      nomeFoto: nomeFoto,
+    );
+  }
+
+  Future<void> excluirEvento(String id) async {
+    await _service.excluirEvento(id);
   }
 }

@@ -1,16 +1,28 @@
+
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+
+import '../../models/animal.dart';
 import '../../viewmodels/admin_animals_viewmodel.dart';
+import '../theme/app_colors.dart';
+import 'animal_register_view.dart';
+import 'admin_events_view.dart';
 
 class AdminAnimalsView extends StatefulWidget {
   const AdminAnimalsView({super.key});
 
   @override
-  State<AdminAnimalsView> createState() => _AdminAnimalsViewState();
+  State<AdminAnimalsView> createState() =>
+      _AdminAnimalsViewState();
 }
 
 class _AdminAnimalsViewState extends State<AdminAnimalsView> {
-  final AdminAnimalsViewModel viewModel = AdminAnimalsViewModel();
+  final viewModel = AdminAnimalsViewModel();
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel.carregarAnimais();
+  }
 
   @override
   void dispose() {
@@ -18,131 +30,129 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
     super.dispose();
   }
 
-  Future<void> _abrirFormulario({
-    Map<String, String>? animal,
-  }) async {
-    final nomeController = TextEditingController(
-      text: animal?['nome'] ?? '',
+  Future<void> _abrirCadastro() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const AnimalRegisterView(),
+      ),
     );
 
-    final fotoController = TextEditingController(
-      text: animal?['foto'] ?? '',
+    if (mounted) {
+      await viewModel.carregarAnimais();
+    }
+  }
+
+  Future<void> _editarAnimal(Animal animal) async {
+    final nome = TextEditingController(text: animal.nome);
+    final raca = TextEditingController(text: animal.raca);
+    final idade = TextEditingController(
+      text: '${animal.idadeEstimada}',
+    );
+    final temperamento = TextEditingController(
+      text: animal.temperamento,
+    );
+    final historico = TextEditingController(
+      text: animal.historicoVacina,
     );
 
-    String especie = animal?['especie'] ?? 'Cão';
-    String sexo = animal?['sexo'] ?? 'Macho';
-    String porte = animal?['porte'] ?? 'Médio';
-    String status = animal?['status'] ?? 'Disponível';
+    String especie = animal.especie.toLowerCase();
+    String porte = animal.porte.toLowerCase();
 
-    final resultado = await showDialog<bool>(
+    if (!['cachorro', 'gato'].contains(especie)) {
+      especie = 'cachorro';
+    }
+
+    if (!['pequeno', 'médio', 'grande'].contains(porte)) {
+      porte = 'pequeno';
+    }
+
+    final salvar = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, atualizarDialogo) {
+          builder: (context, atualizar) {
             return AlertDialog(
-              title: Text(
-                animal == null ? 'Cadastrar animal' : 'Editar animal',
-              ),
+              title: const Text('Editar animal'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
-                      controller: nomeController,
+                      controller: nome,
                       decoration: const InputDecoration(
-                        labelText: 'Nome do animal',
+                        labelText: 'Nome',
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    TextField(
+                      controller: raca,
+                      decoration: const InputDecoration(
+                        labelText: 'Raça',
+                      ),
+                    ),
+                    TextField(
+                      controller: idade,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Idade estimada',
+                      ),
+                    ),
                     DropdownButtonFormField<String>(
                       value: especie,
                       decoration: const InputDecoration(
                         labelText: 'Espécie',
                       ),
-                      items: ['Cão', 'Gato'].map((opcao) {
-                        return DropdownMenuItem(
-                          value: opcao,
-                          child: Text(opcao),
-                        );
-                      }).toList(),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'cachorro',
+                          child: Text('Cachorro'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'gato',
+                          child: Text('Gato'),
+                        ),
+                      ],
                       onChanged: (valor) {
                         if (valor != null) {
-                          atualizarDialogo(() {
-                            especie = valor;
-                          });
+                          atualizar(() => especie = valor);
                         }
                       },
                     ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      value: sexo,
-                      decoration: const InputDecoration(
-                        labelText: 'Sexo',
-                      ),
-                      items: ['Macho', 'Fêmea'].map((opcao) {
-                        return DropdownMenuItem(
-                          value: opcao,
-                          child: Text(opcao),
-                        );
-                      }).toList(),
-                      onChanged: (valor) {
-                        if (valor != null) {
-                          atualizarDialogo(() {
-                            sexo = valor;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       value: porte,
                       decoration: const InputDecoration(
                         labelText: 'Porte',
                       ),
-                      items: ['Pequeno', 'Médio', 'Grande'].map((opcao) {
-                        return DropdownMenuItem(
-                          value: opcao,
-                          child: Text(opcao),
-                        );
-                      }).toList(),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'pequeno',
+                          child: Text('Pequeno'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'médio',
+                          child: Text('Médio'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'grande',
+                          child: Text('Grande'),
+                        ),
+                      ],
                       onChanged: (valor) {
                         if (valor != null) {
-                          atualizarDialogo(() {
-                            porte = valor;
-                          });
+                          atualizar(() => porte = valor);
                         }
                       },
                     ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      value: status,
-                      decoration: const InputDecoration(
-                        labelText: 'Status',
-                      ),
-                      items: [
-                        'Disponível',
-                        'Em Processo',
-                        'Adotado',
-                      ].map((opcao) {
-                        return DropdownMenuItem(
-                          value: opcao,
-                          child: Text(opcao),
-                        );
-                      }).toList(),
-                      onChanged: (valor) {
-                        if (valor != null) {
-                          atualizarDialogo(() {
-                            status = valor;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 12),
                     TextField(
-                      controller: fotoController,
+                      controller: temperamento,
                       decoration: const InputDecoration(
-                        labelText: 'URL da foto',
-                        hintText: 'https://...',
+                        labelText: 'Temperamento',
+                      ),
+                    ),
+                    TextField(
+                      controller: historico,
+                      decoration: const InputDecoration(
+                        labelText: 'Histórico de vacina',
                       ),
                     ),
                   ],
@@ -150,22 +160,17 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext, false);
-                  },
+                  onPressed: () =>
+                      Navigator.pop(dialogContext, false),
                   child: const Text('Cancelar'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    if (nomeController.text.trim().isEmpty) {
-                      return;
-                    }
-                    Navigator.pop(dialogContext, true);
-                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     foregroundColor: Colors.white,
                   ),
+                  onPressed: () =>
+                      Navigator.pop(dialogContext, true),
                   child: const Text('Salvar'),
                 ),
               ],
@@ -175,47 +180,70 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
       },
     );
 
-    if (resultado == true && mounted) {
-      final dados = <String, String>{
-        'nome': nomeController.text.trim(),
-        'especie': especie,
-        'sexo': sexo,
-        'porte': porte,
-        'status': status,
-        'foto': fotoController.text.trim(),
-      };
+    if (salvar == true && mounted) {
+      final idadeValor = int.tryParse(idade.text);
 
-      viewModel.salvarAnimal(animal, dados);
+      if (nome.text.trim().isEmpty ||
+          raca.text.trim().isEmpty ||
+          idadeValor == null ||
+          idadeValor < 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Informe nome, raça e idade válidos.'),
+          ),
+        );
+      } else {
+        try {
+          await viewModel.editarAnimal(animal, {
+            'nome': nome.text.trim(),
+            'raca': raca.text.trim(),
+            'idadeEstimada': idadeValor,
+            'especie': especie,
+            'porte': porte,
+            'temperamento': temperamento.text.trim(),
+            'historicoVacina': historico.text.trim(),
+          });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Animal salvo com sucesso!'),
-        ),
-      );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Animal atualizado!'),
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erro ao atualizar: $e')),
+            );
+          }
+        }
+      }
     }
 
-    nomeController.dispose();
-    fotoController.dispose();
+    nome.dispose();
+    raca.dispose();
+    idade.dispose();
+    temperamento.dispose();
+    historico.dispose();
   }
 
-  Future<void> _excluirAnimal(
-      Map<String, String> animal,
-      ) async {
+  Future<void> _excluirAnimal(Animal animal) async {
     final confirmar = await showDialog<bool>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Excluir animal'),
-          content: Text(
-            'Deseja excluir ${animal['nome']}?',
-          ),
+          content: Text('Deseja excluir ${animal.nome}?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () =>
+                  Navigator.pop(dialogContext, false),
               child: const Text('Cancelar'),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () =>
+                  Navigator.pop(dialogContext, true),
               child: const Text(
                 'Excluir',
                 style: TextStyle(color: Colors.red),
@@ -226,19 +254,24 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
       },
     );
 
-    if (confirmar == true && mounted) {
-      viewModel.excluirAnimal(animal);
-    }
-  }
+    if (confirmar == true) {
+      try {
+        await viewModel.excluirAnimal(animal);
 
-  Color _corStatus(String status) {
-    switch (status) {
-      case 'Disponível':
-        return AppColors.primaryGreen;
-      case 'Em Processo':
-        return Colors.orange.shade700;
-      default:
-        return Colors.grey.shade600;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Animal excluído!'),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao excluir: $e')),
+          );
+        }
+      }
     }
   }
 
@@ -248,15 +281,11 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(
-              Icons.pets,
-              color: AppColors.primaryGreen,
-            ),
-            const SizedBox(width: 8),
-            const Text(
+            Icon(Icons.pets, color: AppColors.primaryGreen),
+            SizedBox(width: 8),
+            Text(
               'Atipattas',
               style: TextStyle(
                 color: AppColors.primaryGreen,
@@ -267,7 +296,6 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
         ),
       ),
       body: SafeArea(
-        // Reconstrói a tela sempre que o ViewModel avisar que mudou algo
         child: ListenableBuilder(
           listenable: viewModel,
           builder: (context, _) {
@@ -290,7 +318,7 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Gerencie o perfil e status dos animais da ONG.',
+                        'Gerencie o perfil dos animais da ONG.',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textGray,
@@ -300,7 +328,7 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () => _abrirFormulario(),
+                          onPressed: _abrirCadastro,
                           icon: const Icon(Icons.add),
                           label: const Text('Adicionar Novo Animal'),
                           style: ElevatedButton.styleFrom(
@@ -326,39 +354,23 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
                               labelText: 'Filtrar por espécie',
                               isDense: true,
                             ),
-                            items: ['Todos', 'Cão', 'Gato'].map((opcao) {
-                              return DropdownMenuItem(
-                                value: opcao,
-                                child: Text(opcao),
-                              );
-                            }).toList(),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'Todos',
+                                child: Text('Todos'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'cachorro',
+                                child: Text('Cachorro'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'gato',
+                                child: Text('Gato'),
+                              ),
+                            ],
                             onChanged: (valor) {
                               if (valor != null) {
                                 viewModel.atualizarFiltroEspecie(valor);
-                              }
-                            },
-                          ),
-                          const SizedBox(height: 8),
-                          DropdownButtonFormField<String>(
-                            value: viewModel.filtroStatus,
-                            decoration: const InputDecoration(
-                              labelText: 'Filtrar por status',
-                              isDense: true,
-                            ),
-                            items: [
-                              'Todos',
-                              'Disponível',
-                              'Em Processo',
-                              'Adotado',
-                            ].map((opcao) {
-                              return DropdownMenuItem(
-                                value: opcao,
-                                child: Text(opcao),
-                              );
-                            }).toList(),
-                            onChanged: (valor) {
-                              if (valor != null) {
-                                viewModel.atualizarFiltroStatus(valor);
                               }
                             },
                           ),
@@ -378,7 +390,13 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
                 ),
                 const SizedBox(height: 8),
                 Expanded(
-                  child: animais.isEmpty
+                  child: viewModel.carregando
+                      ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                      : viewModel.erro != null
+                      ? Center(child: Text(viewModel.erro!))
+                      : animais.isEmpty
                       ? const Center(
                     child: Text('Nenhum animal encontrado.'),
                   )
@@ -396,52 +414,27 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
                           children: [
-                            Stack(
-                              children: [
-                                Image.network(
-                                  animal['foto']!,
+                            Image.network(
+                              animal.foto1,
+                              height: 170,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder:
+                                  (context, error, stackTrace) {
+                                return Container(
                                   height: 170,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (context, error, stackTrace) {
-                                    return Container(
-                                      height: 170,
-                                      color: Colors.grey.shade200,
-                                      child: const Center(
-                                        child: Icon(
-                                          Icons.pets,
-                                          size: 48,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                Positioned(
-                                  top: 10,
-                                  right: 10,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _corStatus(animal['status']!),
-                                      borderRadius:
-                                      BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      animal['status']!,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                      ),
+                                  color: Colors.grey.shade200,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.pets,
+                                      size: 48,
                                     ),
                                   ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
                             Padding(
                               padding: const EdgeInsets.all(12),
@@ -453,29 +446,30 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          animal['nome']!,
+                                          animal.nome,
                                           style: const TextStyle(
                                             fontSize: 16,
-                                            fontWeight: FontWeight.w600,
+                                            fontWeight:
+                                            FontWeight.w600,
                                           ),
                                         ),
                                       ),
                                       PopupMenuButton<String>(
                                         onSelected: (opcao) {
                                           if (opcao == 'editar') {
-                                            _abrirFormulario(
-                                              animal: animal,
-                                            );
-                                          } else if (opcao == 'excluir') {
+                                            _editarAnimal(animal);
+                                          }
+                                          if (opcao == 'excluir') {
                                             _excluirAnimal(animal);
                                           }
                                         },
-                                        itemBuilder: (context) => [
-                                          const PopupMenuItem(
+                                        itemBuilder: (context) =>
+                                        const [
+                                          PopupMenuItem(
                                             value: 'editar',
                                             child: Text('Editar'),
                                           ),
-                                          const PopupMenuItem(
+                                          PopupMenuItem(
                                             value: 'excluir',
                                             child: Text('Excluir'),
                                           ),
@@ -484,24 +478,17 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
                                     ],
                                   ),
                                   Text(
-                                    '${animal['especie']} • '
-                                        '${animal['sexo']} • '
-                                        'Porte ${animal['porte']}',
+                                    '${animal.especie} • Porte ${animal.porte}',
                                     style: const TextStyle(
                                       color: AppColors.textGray,
                                       fontSize: 12,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  Wrap(
-                                    spacing: 6,
-                                    children: const [
-                                      Chip(
-                                        label: Text('Cadastrado'),
-                                        visualDensity:
-                                        VisualDensity.compact,
-                                      ),
-                                    ],
+                                  const Chip(
+                                    label: Text('Cadastrado'),
+                                    visualDensity:
+                                    VisualDensity.compact,
                                   ),
                                 ],
                               ),
@@ -523,7 +510,14 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
         selectedItemColor: AppColors.primaryGreen,
         unselectedItemColor: AppColors.textGray,
         onTap: (index) {
-          if (index != 1) {
+          if (index == 3) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminEventsView(),
+              ),
+            );
+          } else if (index != 1) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
