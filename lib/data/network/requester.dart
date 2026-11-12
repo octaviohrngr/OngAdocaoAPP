@@ -7,7 +7,7 @@ import '../services/auth_session.dart';
 class Requester {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: 'http://localhost:3000',
+      baseUrl: 'http://10.68.75.42:3000/',
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ),
