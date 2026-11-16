@@ -270,14 +270,15 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () {
+                        onPressed: widget.animal.status == 'adotado'
+                            ? null
+                            : () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  AdoptionFormScreen(
-                                    animal: widget.animal,
-                                  ),
+                              builder: (_) => AdoptionFormScreen(
+                                animal: widget.animal,
+                              ),
                             ),
                           );
                         },

@@ -1,11 +1,13 @@
 
 import 'package:flutter/material.dart';
-
-
 import '../../models/evento.dart';
 import '../../viewmodels/admin_events_viewmodel.dart';
 import '../theme/app_colors.dart';
 import 'event_register_view.dart';
+import '../widgets/admin_bottom_navigation_bar.dart';
+import 'admin_animals_view.dart';
+import 'admin_solicitacoes_view.dart';
+
 
 class AdminEventsView extends StatefulWidget {
   const AdminEventsView({super.key});
@@ -352,11 +354,40 @@ class _AdminEventsViewState extends State<AdminEventsView> {
                         construirCard,
                       ),
                 ],
+
               ),
             );
           },
         ),
       ),
+
+      bottomNavigationBar: AdminBottomNavigationBar(
+        currentIndex: 3,
+        onTap: (index) {
+          if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AdminAnimalsView(),
+              ),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AdminSolicitacoesView(),
+              ),
+            );
+          } else if (index == 0) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Dashboard ainda não implementado.'),
+              ),
+            );
+          }
+        },
+      ),
+
     );
   }
 }

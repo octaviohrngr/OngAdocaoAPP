@@ -4,6 +4,7 @@ import 'package:ong_adocao_app/models/animal.dart';
 import 'package:ong_adocao_app/data/services/auth_session.dart';
 import 'package:ong_adocao_app/data/services/favorites_service.dart';
 import 'package:ong_adocao_app/data/repository/animal_repository.dart';
+import 'package:ong_adocao_app/data/repository/notificacao_repository.dart';
 
 class HomeViewModel extends ChangeNotifier {
   final FavoritesService _favoritesService = FavoritesService();
@@ -17,6 +18,30 @@ class HomeViewModel extends ChangeNotifier {
 
   bool isLoading = false;
   String? mensagemErro;
+
+
+  final NotificacaoRepository _notificacaoRepository =
+  NotificacaoRepository();
+
+  int notificacoesNaoLidas = 0;
+
+  Future<void> carregarQuantidadeNotificacoes() async {
+    if (!usuarioLogado) {
+      notificacoesNaoLidas = 0;
+      notifyListeners();
+      return;
+    }
+
+    try {
+      notificacoesNaoLidas =
+      await _notificacaoRepository.contarNaoLidas();
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Erro ao contar notificações: $e');
+    }
+  }
+
 
   final List<String> filters = [
     'Tudo',
@@ -60,9 +85,9 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
-  // Filtrar animais recebidos da API
+
   List<Animal> get filteredAnimals {
-    return animals.where((animal) {
+    final resultado = animals.where((animal) {
       final texto = searchText.trim().toLowerCase();
 
       final matchesSearch =
@@ -94,7 +119,21 @@ class HomeViewModel extends ChangeNotifier {
 
       return matchesSearch && matchesFilter;
     }).toList();
+
+    resultado.sort((a, b) {
+      final aAdotado = a.status == 'adotado';
+      final bAdotado = b.status == 'adotado';
+
+      if (aAdotado == bAdotado) {
+        return 0;
+      }
+
+      return aAdotado ? 1 : -1;
+    });
+
+    return resultado;
   }
+
 
   // Idade em meses
   String formatarIdade(int meses) {

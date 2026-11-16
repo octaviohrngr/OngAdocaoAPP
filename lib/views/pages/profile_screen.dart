@@ -1,12 +1,12 @@
 
 import 'package:flutter/material.dart';
-
-import '../../models/usuario.dart';
+import 'notificacoes_view.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_bottom_navigation_bar.dart';
 import 'home_view.dart';
 import 'events_view.dart';
+import 'minhas_solicitacoes_view.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -17,6 +17,15 @@ class ProfileView extends StatefulWidget {
 
 class _ProfileViewState extends State<ProfileView> {
   final ProfileViewModel viewModel = ProfileViewModel();
+
+  void _mostrarSolicitacoes() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const MinhasSolicitacoesView(),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -129,6 +138,7 @@ class _ProfileViewState extends State<ProfileView> {
     );
   }
 
+
   Widget _optionsCard() {
     return Card(
       color: AppColors.cardBackground,
@@ -143,15 +153,24 @@ class _ProfileViewState extends State<ProfileView> {
             'Meus Dados',
             _mostrarMeusDados,
           ),
+
           _option(
             Icons.favorite_border,
             'Favoritos',
             _mostrarFavoritos,
           ),
+
+          _option(
+            Icons.assignment_outlined,
+            'Minhas Solicitações',
+            _mostrarSolicitacoes,
+          ),
+
           const Divider(
             color: AppColors.divider,
             height: 1,
           ),
+
           _option(
             Icons.logout,
             'Sair da Conta',
@@ -162,6 +181,7 @@ class _ProfileViewState extends State<ProfileView> {
       ),
     );
   }
+
 
   Widget _option(
       IconData icon,
@@ -486,6 +506,7 @@ class _ProfileViewState extends State<ProfileView> {
     );
   }
 
+
   void _navegar(int index) {
     if (index == 0) {
       Navigator.pushAndRemoveUntil(
@@ -503,13 +524,17 @@ class _ProfileViewState extends State<ProfileView> {
         ),
       );
     } else if (index == 2) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Central de notificações em breve.'),
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const NotificacoesView(),
         ),
       );
+    } else if (index == 3) {
+      return;
     }
   }
+
 
   Widget _supportCard() {
     return Container(

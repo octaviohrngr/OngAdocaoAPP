@@ -39,6 +39,8 @@ dependencies:
   dio: ^5.11.1
   image_picker: ^1.2.4
   intl: ^0.20.3
+  pdf: ^3.13.1
+  printing: ^5.15.1
 
 dev_dependencies:
   flutter_test:

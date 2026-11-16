@@ -6,6 +6,9 @@ import '../../viewmodels/admin_animals_viewmodel.dart';
 import '../theme/app_colors.dart';
 import 'animal_register_view.dart';
 import 'admin_events_view.dart';
+import 'admin_solicitacoes_view.dart';
+
+import '../widgets/admin_bottom_navigation_bar.dart';
 
 class AdminAnimalsView extends StatefulWidget {
   const AdminAnimalsView({super.key});
@@ -17,6 +20,7 @@ class AdminAnimalsView extends StatefulWidget {
 
 class _AdminAnimalsViewState extends State<AdminAnimalsView> {
   final viewModel = AdminAnimalsViewModel();
+  int _versaoBarra = 0;
 
   @override
   void initState() {
@@ -504,48 +508,53 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
           },
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+
+
+
+      bottomNavigationBar: AdminBottomNavigationBar(
+        key: ValueKey(_versaoBarra),
         currentIndex: 1,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primaryGreen,
-        unselectedItemColor: AppColors.textGray,
-        onTap: (index) {
-          if (index == 3) {
-            Navigator.push(
+        onTap: (index) async {
+          if (index == 2) {
+            await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const AdminEventsView(),
+                builder: (_) => const AdminSolicitacoesView(),
               ),
             );
-          } else if (index != 1) {
+
+            if (!mounted) return;
+
+            setState(() {
+              _versaoBarra++;
+            });
+
+          } else if (index == 3) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AdminEventsView(),
+              ),
+            );
+
+            if (!mounted) return;
+
+            setState(() {
+              _versaoBarra++;
+            });
+
+          } else if (index == 0) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text(
-                  'Essa seção será conectada no próximo passo.',
-                ),
+                content: Text('Dashboard ainda não implementado.'),
               ),
             );
           }
         },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pets),
-            label: 'Animais',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.volunteer_activism_outlined),
-            label: 'Adoção',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month_outlined),
-            label: 'Eventos',
-          ),
-        ],
       ),
+
+
+
     );
   }
 }
