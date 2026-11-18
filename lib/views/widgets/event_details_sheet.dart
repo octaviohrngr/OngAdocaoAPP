@@ -51,7 +51,7 @@ class EventDetailsSheet extends StatelessWidget {
                 ),
                 onPressed: onTenhoInteresse,
                 child: const Text(
-                  'Tenho interesse em adotar',
+                  'Voltar para Home',
                 ),
               ),
             ),
