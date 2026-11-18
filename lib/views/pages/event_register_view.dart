@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/evento.dart';
 import '../../viewmodels/event_register_viewmodel.dart';
 import '../theme/app_colors.dart';
@@ -36,13 +36,21 @@ class _EventRegisterViewState extends State<EventRegisterView> {
     super.dispose();
   }
 
+
   Future<void> selecionarDataHora() async {
     final agora = DateTime.now();
+    final hoje = DateTime(agora.year, agora.month, agora.day);
+
+    final dataAtual = viewModel.dataHora;
+
+    final dataInicial = dataAtual != null && !dataAtual.isBefore(hoje)
+        ? dataAtual
+        : hoje;
 
     final data = await showDatePicker(
       context: context,
-      initialDate: viewModel.dataHora ?? agora,
-      firstDate: DateTime(2020),
+      initialDate: dataInicial,
+      firstDate: hoje,
       lastDate: DateTime(2100),
     );
 
@@ -50,23 +58,35 @@ class _EventRegisterViewState extends State<EventRegisterView> {
 
     final horario = await showTimePicker(
       context: context,
-      initialTime: viewModel.dataHora != null
-          ? TimeOfDay.fromDateTime(viewModel.dataHora!)
+      initialTime: dataAtual != null
+          ? TimeOfDay.fromDateTime(dataAtual)
           : TimeOfDay.now(),
     );
 
-    if (horario == null) return;
+    if (horario == null || !mounted) return;
 
-    viewModel.selecionarDataHora(
-      DateTime(
-        data.year,
-        data.month,
-        data.day,
-        horario.hour,
-        horario.minute,
-      ),
+    final dataHoraSelecionada = DateTime(
+      data.year,
+      data.month,
+      data.day,
+      horario.hour,
+      horario.minute,
     );
+
+    if (!dataHoraSelecionada.isAfter(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Selecione uma data e horário.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    viewModel.selecionarDataHora(dataHoraSelecionada);
   }
+
 
   Future<void> salvar() async {
     if (!formKey.currentState!.validate()) return;
@@ -210,6 +230,8 @@ class _EventRegisterViewState extends State<EventRegisterView> {
       ],
     );
   }
+
+
 
   @override
   Widget build(BuildContext context) {

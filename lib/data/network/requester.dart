@@ -7,7 +7,8 @@ import '../services/auth_session.dart';
 class Requester {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: 'http://10.68.75.42:3000/',
+      //baseUrl: 'http://10.68.75.42:3000/',
+      baseUrl: 'http://192.168.1.103:3000/',
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ),
@@ -118,6 +119,22 @@ class Requester {
       throw Exception(mensagemErro(e));
     }
   }
+
+  Future<dynamic> patch(
+      String path,
+      Map<String, dynamic> body,
+      ) async {
+    try {
+      final response = await _dio.patch(
+        path,
+        data: body,
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      throw Exception(mensagemErro(e));
+    }
+  }
   // Excluir dados.
   Future<dynamic> delete(String path) async {
     final response = await _dio.delete(path);
@@ -129,8 +146,10 @@ class Requester {
   String get baseUrl => _dio.options.baseUrl;
 }
 
+
 String mensagemErro(DioException erro) {
   final status = erro.response?.statusCode;
+  final dados = erro.response?.data;
 
   if (erro.type == DioExceptionType.connectionError) {
     return 'Não foi possível conectar à API.';
@@ -147,15 +166,29 @@ String mensagemErro(DioException erro) {
   }
 
   if (status == 401) {
+    if (erro.requestOptions.path.contains('/auth/login')) {
+      return 'E-mail ou senha incorretos.';
+    }
+
     return 'Sessão expirada. Faça login novamente.';
   }
 
-  if (status == 403) {
+
+    if (status == 403) {
     return 'Você não tem permissão para realizar essa operação.';
   }
 
   if (status == 404) {
     return 'Recurso não encontrado na API.';
+  }
+
+  // Solicitação duplicada
+  if (status == 409) {
+    if (dados is Map && dados['mensagem'] is String) {
+      return dados['mensagem'];
+    }
+
+    return 'Você já possui uma solicitação de adoção para este animal.';
   }
 
   if (status == 413) {

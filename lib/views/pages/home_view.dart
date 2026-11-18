@@ -1,12 +1,15 @@
+
 import 'package:flutter/material.dart';
 
 import '../../models/animal.dart';
 import '../../viewmodels/home_viewmodel.dart';
+
 import '../theme/app_colors.dart';
 import '../widgets/app_bottom_navigation_bar.dart';
+import '../widgets/animal_card.dart';
+import 'notificacoes_view.dart';
 import 'login_view.dart';
 import 'animal_detail_screen.dart';
-
 import 'profile_screen.dart';
 import 'events_view.dart';
 
@@ -34,7 +37,12 @@ class _HomeViewState extends State<HomeView> {
     super.dispose();
   }
 
+
   void _openAnimal(Animal animal) {
+    if (animal.status == 'adotado') {
+      return;
+    }
+
     if (!viewModel.usuarioLogado) {
       Navigator.push(
         context,
@@ -50,12 +58,22 @@ class _HomeViewState extends State<HomeView> {
       MaterialPageRoute(
         builder: (_) => AnimalDetailScreen(
           animal: animal,
-        )
+        ),
       ),
-    ).then((_) {
-      viewModel.carregarFavoritos();
+    ).then((_) async {
+      if (!mounted) return;
+
+      // Atualiza os animais com os dados mais recentes da API.
+      await viewModel.carregarAnimais();
+
+      if (!mounted) return;
+
+      // Mantém a atualização dos favoritos.
+      await viewModel.carregarFavoritos();
     });
   }
+
+
 
   void _navigate(int index) {
     if (index == 0) return;
@@ -67,10 +85,25 @@ class _HomeViewState extends State<HomeView> {
           builder: (_) => const EventsView(),
         ),
       );
-    } else if (index == 2 && viewModel.usuarioLogado) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Central de alertas em breve.'),
+    } else if (index == 2) {
+      if (!viewModel.usuarioLogado) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const NotificacoesView(),
+          ),
+        ).then((_) {
+          if (mounted) {
+            viewModel.carregarQuantidadeNotificacoes();
+          }
+        });
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const NotificacoesView(),
         ),
       );
     } else if (index == 3 && viewModel.usuarioLogado) {
@@ -83,6 +116,7 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,14 +125,14 @@ class _HomeViewState extends State<HomeView> {
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(
+            Icon(
               Icons.pets,
               color: AppColors.primaryGreen,
             ),
-            const SizedBox(width: 8),
-            const Text(
+            SizedBox(width: 8),
+            Text(
               'Atipattas',
               style: TextStyle(
                 color: AppColors.textDark,
@@ -138,7 +172,6 @@ class _HomeViewState extends State<HomeView> {
         ],
       ),
       body: SafeArea(
-
         child: ListenableBuilder(
           listenable: viewModel,
           builder: (context, _) {
@@ -160,7 +193,9 @@ class _HomeViewState extends State<HomeView> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                  ),
                   child: TextField(
                     onChanged: viewModel.atualizarBusca,
                     decoration: InputDecoration(
@@ -182,17 +217,22 @@ class _HomeViewState extends State<HomeView> {
                   height: 40,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                    ),
                     itemCount: viewModel.filters.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    separatorBuilder: (_, __) =>
+                    const SizedBox(width: 8),
                     itemBuilder: (context, index) {
                       final filter = viewModel.filters[index];
-                      final isSelected = filter == viewModel.selectedFilter;
+                      final isSelected =
+                          filter == viewModel.selectedFilter;
 
                       return ChoiceChip(
                         label: Text(filter),
                         selected: isSelected,
-                        onSelected: (_) => viewModel.atualizarFiltro(filter),
+                        onSelected: (_) =>
+                            viewModel.atualizarFiltro(filter),
                         selectedColor: AppColors.primaryGreen,
                         backgroundColor: Colors.white,
                         labelStyle: TextStyle(
@@ -217,7 +257,6 @@ class _HomeViewState extends State<HomeView> {
                     ),
                   ),
                 ),
-
                 Expanded(
                   child: viewModel.isLoading
                       ? const Center(
@@ -228,7 +267,8 @@ class _HomeViewState extends State<HomeView> {
                       : viewModel.mensagemErro != null
                       ? Center(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment:
+                      MainAxisAlignment.center,
                       children: [
                         Text(
                           viewModel.mensagemErro!,
@@ -239,36 +279,53 @@ class _HomeViewState extends State<HomeView> {
                         ),
                         const SizedBox(height: 12),
                         TextButton(
-                          onPressed: viewModel.carregarAnimais,
-                          child: const Text('Tentar novamente'),
+                          onPressed:
+                          viewModel.carregarAnimais,
+                          child: const Text(
+                            'Tentar novamente',
+                          ),
                         ),
                       ],
                     ),
                   )
                       : animalsToShow.isEmpty
                       ? const Center(
-                    child: Text('Nenhum animal encontrado.'),
+                    child: Text(
+                      'Nenhum animal encontrado.',
+                    ),
                   )
                       : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    padding:
+                    const EdgeInsets.fromLTRB(
+                      16,
+                      0,
+                      16,
+                      16,
+                    ),
                     itemCount: animalsToShow.length,
                     itemBuilder: (context, index) {
-                      final animal = animalsToShow[index];
+                      final animal =
+                      animalsToShow[index];
 
-                      return _AnimalCard(
+                      return AnimalCard(
                         animal: animal,
                         idade: viewModel.formatarIdade(
                           animal.idadeEstimada,
                         ),
-                        onTap: () => _openAnimal(animal),
-                        isFavorite: viewModel.isFavorito(animal.nome),
+                        onTap: () =>
+                            _openAnimal(animal),
+                        isFavorite:
+                        viewModel.isFavorito(
+                          animal.nome,
+                        ),
                         onFavoriteTap: () =>
-                            viewModel.alternarFavorito(animal.nome),
+                            viewModel.alternarFavorito(
+                              animal.nome,
+                            ),
                       );
                     },
                   ),
                 ),
-
               ],
             );
           },
@@ -278,135 +335,6 @@ class _HomeViewState extends State<HomeView> {
         currentIndex: 0,
         onTap: _navigate,
         usuarioLogado: viewModel.usuarioLogado,
-      ),
-    );
-  }
-}
-
-class _AnimalCard extends StatelessWidget {
-  final Animal animal;
-  final String idade;
-  final VoidCallback onTap;
-  final bool isFavorite;
-  final VoidCallback onFavoriteTap;
-
-  const _AnimalCard({
-    required this.animal,
-    required this.idade,
-    required this.onTap,
-    required this.isFavorite,
-    required this.onFavoriteTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      color: Colors.white,
-      elevation: 2,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Image.network(
-                    animal.foto1,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: AppColors.inputFill,
-                      child: const Icon(
-                        Icons.pets,
-                        size: 45,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Disponível',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    tooltip: isFavorite
-                        ? 'Remover dos favoritos'
-                        : 'Adicionar aos favoritos',
-                    onPressed: onFavoriteTap,
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.9),
-                    ),
-                    icon: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite ? Colors.red : AppColors.primaryGreen,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          animal.nome,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          '${animal.raca} • $idade',
-                          style: const TextStyle(
-                            color: AppColors.textGray,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: AppColors.textGray,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

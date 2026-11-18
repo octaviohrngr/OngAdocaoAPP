@@ -7,6 +7,7 @@ class Animal {
   final String porte;
   final String foto1;
   final String foto2;
+  final String status;
   final String temperamento;
   final String historicoVacina;
 
@@ -19,6 +20,7 @@ class Animal {
     required this.porte,
     required this.foto1,
     required this.foto2,
+    this.status = 'disponivel',
     required this.temperamento,
     required this.historicoVacina,
   });

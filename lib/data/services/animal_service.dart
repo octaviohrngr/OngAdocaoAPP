@@ -36,4 +36,6 @@ class AnimalService {
   Future<dynamic> excluirAnimal(String id) async {
     return await _requester.delete('/animais/$id');
   }
+
+  String get baseUrl => _requester.baseUrl;
 }

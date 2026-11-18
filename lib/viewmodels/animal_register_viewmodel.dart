@@ -47,6 +47,11 @@ class AnimalRegisterViewModel extends ChangeNotifier {
 
   Future<void> selecionarFotos() async {
     try {
+      if (fotos.length >= 2) {
+        erro = 'Você só pode adicionar 2 fotos.';
+        notifyListeners();
+        return;
+      }
       final selecionadas = await _picker.pickMultiImage(
         imageQuality: 80,
       );
@@ -172,5 +177,14 @@ class AnimalRegisterViewModel extends ChangeNotifier {
     idadeController.dispose();
     historicoController.dispose();
     super.dispose();
+  }
+
+  String unidadeIdade = 'anos';
+
+  void selecionarUnidadeIdade(String? valor) {
+    if (valor == null) return;
+
+    unidadeIdade = valor;
+    notifyListeners();
   }
 }

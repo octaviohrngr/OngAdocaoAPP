@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 
 import '../../models/animal.dart';
 import '../../data/services/favorites_service.dart';
+import '../../data/services/auth_session.dart';
 import '../../data/network/requester.dart';
+import '../../viewmodels/animal_detail_viewmodel.dart';
+
+import '../theme/app_colors.dart';
 import 'adoption_form_screen.dart';
 
 class AnimalDetailScreen extends StatefulWidget {
@@ -19,13 +23,18 @@ class AnimalDetailScreen extends StatefulWidget {
       _AnimalDetailScreenState();
 }
 
-class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
-  static const Color _primaryGreen = Color(0xFF3BAA57);
+class _AnimalDetailScreenState
+    extends State<AnimalDetailScreen> {
+  static const Color _primaryGreen = AppColors.primaryGreen;
 
   final FavoritesService _favoritesService = FavoritesService();
 
+  final AnimalDetailViewModel _viewModel =
+  AnimalDetailViewModel();
+
   bool _isFavorite = false;
   bool _carregandoFavorito = true;
+  bool _verificandoSolicitacao = true;
 
   String _urlFoto(String foto) {
     if (foto.startsWith('http://') ||
@@ -46,7 +55,69 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   @override
   void initState() {
     super.initState();
+
     _carregarFavorito();
+    _verificarSolicitacao();
+  }
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
+
+  Future<void> _verificarSolicitacao() async {
+    final usuarioId = AuthSession.usuario?.id;
+
+    if (usuarioId == null || usuarioId.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _verificandoSolicitacao = false;
+        });
+      }
+      return;
+    }
+
+    try {
+      await _viewModel.verificarSolicitacao(
+        widget.animal.id,
+        usuarioId,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _verificandoSolicitacao = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _abrirFormulario() async {
+    final usuarioId = AuthSession.usuario?.id;
+
+    if (usuarioId == null || usuarioId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Faça login para solicitar a adoção.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AdoptionFormScreen(
+          animal: widget.animal,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    await _verificarSolicitacao();
   }
 
   Future<void> _carregarFavorito() async {
@@ -123,7 +194,8 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                     left: 12,
                     child: _CircleIconButton(
                       icon: Icons.arrow_back,
-                      onTap: () => Navigator.maybePop(context),
+                      onTap: () =>
+                          Navigator.maybePop(context),
                     ),
                   ),
 
@@ -168,7 +240,8 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
                   children: [
                     Text(
                       widget.animal.nome,
@@ -253,7 +326,8 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius:
+                        BorderRadius.circular(12),
                       ),
                       child: Text(
                         widget.animal.historicoVacina.isNotEmpty
@@ -267,41 +341,66 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
 
                     const SizedBox(height: 24),
 
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  AdoptionFormScreen(
-                                    animal: widget.animal,
-                                  ),
+                    ListenableBuilder(
+                      listenable: _viewModel,
+                      builder: (context, child) {
+                        final jaSolicitou =
+                            _viewModel.jaSolicitou;
+
+                        final adotado =
+                            widget.animal.status == 'adotado';
+
+                        final bloqueado =
+                            _verificandoSolicitacao ||
+                                jaSolicitou ||
+                                adotado;
+
+                        String textoBotao = 'Quero Adotar';
+
+                        if (_verificandoSolicitacao) {
+                          textoBotao = 'Verificando...';
+                        } else if (jaSolicitou) {
+                          textoBotao =
+                          'Solicitação já enviada';
+                        } else if (adotado) {
+                          textoBotao = 'Animal adotado';
+                        }
+
+                        return SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: bloqueado
+                                ? null
+                                : _abrirFormulario,
+                            icon: const Icon(
+                              Icons.volunteer_activism_outlined,
                             ),
-                          );
-                        },
-                        icon: const Icon(
-                          Icons.volunteer_activism_outlined,
-                        ),
-                        label: const Text('Quero Adotar'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _primaryGreen,
-                          foregroundColor: Colors.white,
-                          padding:
-                          const EdgeInsets.symmetric(
-                            vertical: 14,
+                            label: Text(textoBotao),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                              AppColors.primaryGreen,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor:
+                              AppColors.primaryGreen
+                                  .withOpacity(0.5),
+                              disabledForegroundColor:
+                              Colors.white,
+                              padding:
+                              const EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                BorderRadius.circular(12),
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                            BorderRadius.circular(12),
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ],
                 ),

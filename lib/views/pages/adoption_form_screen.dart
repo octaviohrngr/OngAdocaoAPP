@@ -1,21 +1,25 @@
 
 import 'package:flutter/material.dart';
+
 import '../../viewmodels/adoption_form_viewmodel.dart';
 import '../../data/services/auth_session.dart';
-import 'adoption_success_screen.dart';
-import 'login_view.dart';
 import '../../models/animal.dart';
 import '../theme/app_colors.dart';
+import '../../viewmodels/animal_detail_viewmodel.dart';
 import 'adoption_success_screen.dart';
-
+import 'login_view.dart';
 
 class AdoptionFormScreen extends StatefulWidget {
   final Animal animal;
+  final Map<String, dynamic>? formulario;
 
   const AdoptionFormScreen({
     super.key,
     required this.animal,
+    this.formulario,
   });
+
+  bool get modoEdicao => formulario != null;
 
   @override
   State<AdoptionFormScreen> createState() =>
@@ -43,6 +47,34 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+
+    final formulario = widget.formulario;
+
+    if (formulario == null) return;
+
+    _nameController.text =
+        (formulario['nome'] ?? '').toString();
+    _emailController.text =
+        (formulario['email'] ?? '').toString();
+    _phoneController.text =
+        (formulario['telefone'] ?? '').toString();
+    _messageController.text =
+        (formulario['mensagem'] ?? '').toString();
+
+    final moradia = formulario['tipoMoradia']?.toString();
+    _housingType =
+    ['Casa', 'Apartamento'].contains(moradia) ? moradia : null;
+
+    final tempo = formulario['tempoMedioSozinho']?.toString();
+    _timeAlone =
+    _timeAloneOptions.contains(tempo) ? tempo : null;
+
+    _agreedToTerms = formulario['aceitarTermos'] == true;
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
@@ -52,19 +84,35 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
     super.dispose();
   }
 
-
   Future<void> _submit() async {
     if (_viewModel.isLoading) return;
+
+    if (widget.modoEdicao) {
+      final status = widget.formulario?['status'];
+
+      if (status != 'em_analise') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Esta solicitação foi finalizada e não pode ser editada.',
+            ),
+          ),
+        );
+        return;
+      }
+    }
 
     final formularioValido =
         _formKey.currentState?.validate() ?? false;
 
     if (!formularioValido) return;
 
-    if (_housingType == null) {
+    if (_housingType == null || _timeAlone == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Selecione o tipo de moradia.'),
+          content: Text(
+            'Selecione o tipo de moradia e o tempo médio sozinho.',
+          ),
         ),
       );
       return;
@@ -86,7 +134,7 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Faça login para enviar sua solicitação.',
+            'Faça login para continuar.',
           ),
         ),
       );
@@ -100,37 +148,88 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
       return;
     }
 
-    final sucesso = await _viewModel.enviarSolicitacao(
-      animal: widget.animal,
-      nome: _nameController.text,
-      email: _emailController.text,
-      telefone: _phoneController.text,
-      tipoMoradia: _housingType!,
-      tempoMedioSozinho: _timeAlone!,
-      mensagem: _messageController.text,
-      aceitarTermos: _agreedToTerms,
-    );
+    final bool sucesso;
+
+    if (widget.modoEdicao) {
+      final id = (widget.formulario?['_id'] ?? '').toString();
+
+      if (id.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Identificador do formulário inválido.'),
+          ),
+        );
+        return;
+      }
+
+      sucesso = await _viewModel.atualizarSolicitacao(
+        id: id,
+        nome: _nameController.text,
+        email: _emailController.text,
+        telefone: _phoneController.text,
+        tipoMoradia: _housingType!,
+        tempoMedioSozinho: _timeAlone!,
+        mensagem: _messageController.text,
+        aceitarTermos: _agreedToTerms,
+      );
+    } else {
+      sucesso = await _viewModel.enviarSolicitacao(
+        animal: widget.animal,
+        nome: _nameController.text,
+        email: _emailController.text,
+        telefone: _phoneController.text,
+        tipoMoradia: _housingType!,
+        tempoMedioSozinho: _timeAlone!,
+        mensagem: _messageController.text,
+        aceitarTermos: _agreedToTerms,
+      );
+    }
 
     if (!mounted) return;
 
+
     if (sucesso) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const AdoptionSuccessScreen(),
-        ),
-      );
+      if (widget.modoEdicao) {
+        Navigator.pop(context, true);
+      } else {
+        final usuarioId = AuthSession.usuario?.id;
+
+        if (usuarioId != null && usuarioId.isNotEmpty) {
+          final animalDetailViewModel = AnimalDetailViewModel();
+
+          try {
+            await animalDetailViewModel.registrarSolicitacao(
+              widget.animal.id,
+              usuarioId,
+            );
+          } catch (e) {
+            debugPrint('Erro ao salvar solicitação localmente: $e');
+          } finally {
+            animalDetailViewModel.dispose();
+          }
+        }
+
+        if (!mounted) return;
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const AdoptionSuccessScreen(),
+          ),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             _viewModel.mensagemErro ??
-                'Não foi possível enviar a solicitação.',
+                'Não foi possível salvar a solicitação.',
           ),
           backgroundColor: Colors.red,
         ),
       );
     }
+
   }
 
   @override
@@ -154,50 +253,37 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            20,
-            12,
-            20,
-            30,
-          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 30),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Solicitação de Adoção',
-                style: TextStyle(
+              Text(
+                widget.modoEdicao
+                    ? 'Editar Solicitação'
+                    : 'Solicitação de Adoção',
+                style: const TextStyle(
                   fontSize: 23,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textDark,
                 ),
               ),
-
               const SizedBox(height: 6),
-
               Text(
-                'Você está a um passo de dar um lar cheio '
-                    'de amor para ${widget.animal.nome}.',
+                widget.modoEdicao
+                    ? 'Atualize os dados da sua solicitação de adoção de ${widget.animal.nome}.'
+                    : 'Você está a um passo de dar um lar cheio de amor para ${widget.animal.nome}.',
                 style: const TextStyle(
                   fontSize: 13,
                   height: 1.5,
                   color: AppColors.textGray,
                 ),
               ),
-
               const SizedBox(height: 22),
-
               _animalCard(),
-
               const SizedBox(height: 22),
-
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(
-                  16,
-                  20,
-                  16,
-                  18,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 18),
                 decoration: BoxDecoration(
                   color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(22),
@@ -215,38 +301,27 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _sectionTitle('Seus Dados'),
-
                       const SizedBox(height: 18),
-
                       const _FieldLabel('Nome Completo'),
-
                       TextFormField(
                         controller: _nameController,
-                        textCapitalization:
-                        TextCapitalization.words,
+                        textCapitalization: TextCapitalization.words,
                         decoration: _inputDecoration(
                           'Digite seu nome completo',
                         ),
                         validator: (value) {
-                          if (value == null ||
-                              value.trim().isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Informe seu nome completo';
                           }
                           return null;
                         },
                       ),
-
                       const SizedBox(height: 16),
-
                       const _FieldLabel('E-mail'),
-
                       TextFormField(
                         controller: _emailController,
-                        keyboardType:
-                        TextInputType.emailAddress,
-                        decoration: _inputDecoration(
-                          'seu@email.com',
-                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: _inputDecoration('seu@email.com'),
                         validator: (value) {
                           final email = value?.trim() ?? '';
 
@@ -259,11 +334,8 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                           return null;
                         },
                       ),
-
                       const SizedBox(height: 16),
-
                       const _FieldLabel('Telefone'),
-
                       TextFormField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
@@ -271,22 +343,16 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                           '(00) 00000-0000',
                         ),
                         validator: (value) {
-                          if (value == null ||
-                              value.trim().isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Informe seu telefone';
                           }
                           return null;
                         },
                       ),
-
                       const SizedBox(height: 28),
-
                       _sectionTitle('Sobre a Rotina'),
-
                       const SizedBox(height: 18),
-
                       const _FieldLabel('Tipo de Moradia'),
-
                       Row(
                         children: [
                           _housingOption('Casa'),
@@ -294,14 +360,10 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                           _housingOption('Apartamento'),
                         ],
                       ),
-
                       const SizedBox(height: 18),
-
                       const _FieldLabel(
-                        'Tempo médio que o animal ficará sozinho '
-                            '(por dia)',
+                        'Tempo médio que o animal ficará sozinho (por dia)',
                       ),
-
                       DropdownButtonFormField<String>(
                         value: _timeAlone,
                         isExpanded: true,
@@ -336,56 +398,43 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                           return null;
                         },
                       ),
-
                       const SizedBox(height: 18),
-
                       const _FieldLabel(
                         'Mensagem para o abrigo (opcional)',
                       ),
-
                       TextFormField(
                         controller: _messageController,
                         maxLines: 3,
                         textCapitalization:
                         TextCapitalization.sentences,
                         decoration: _inputDecoration(
-                          'Conte um pouco sobre você e por '
-                              'que deseja adotar ${widget.animal.nome}...',
+                          'Conte um pouco sobre você e por que deseja adotar ${widget.animal.nome}...',
                         ),
                       ),
-
                       const SizedBox(height: 22),
-
                       Row(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SizedBox(
                             width: 24,
                             height: 24,
                             child: Checkbox(
                               value: _agreedToTerms,
-                              activeColor:
-                              AppColors.primaryGreen,
+                              activeColor: AppColors.primaryGreen,
                               side: BorderSide(
                                 color: Colors.grey.shade400,
                               ),
                               onChanged: (value) {
                                 setState(() {
-                                  _agreedToTerms =
-                                      value ?? false;
+                                  _agreedToTerms = value ?? false;
                                 });
                               },
                             ),
                           ),
-
                           const SizedBox(width: 10),
-
                           const Expanded(
                             child: Text(
-                              'Declaro que as informações acima '
-                                  'são verdadeiras e concordo com '
-                                  'os termos de adoção responsável.',
+                              'Declaro que as informações acima são verdadeiras e concordo com os termos de adoção responsável.',
                               style: TextStyle(
                                 fontSize: 12,
                                 height: 1.5,
@@ -395,10 +444,7 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 28),
-
-
                       ListenableBuilder(
                         listenable: _viewModel,
                         builder: (context, _) {
@@ -406,16 +452,20 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                             width: double.infinity,
                             height: 52,
                             child: ElevatedButton(
-                              onPressed:
-                              _viewModel.isLoading ? null : _submit,
+                              onPressed: _viewModel.isLoading
+                                  ? null
+                                  : _submit,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryGreen,
+                                backgroundColor:
+                                AppColors.primaryGreen,
                                 foregroundColor: Colors.white,
                                 disabledBackgroundColor:
-                                AppColors.primaryGreen.withOpacity(0.6),
+                                AppColors.primaryGreen
+                                    .withOpacity(0.6),
                                 elevation: 2,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
+                                  borderRadius:
+                                  BorderRadius.circular(30),
                                 ),
                               ),
                               child: _viewModel.isLoading
@@ -427,19 +477,22 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                                   color: Colors.white,
                                 ),
                               )
-                                  : const Row(
+                                  : Row(
                                 mainAxisAlignment:
                                 MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    'Enviar Solicitação',
-                                    style: TextStyle(
+                                    widget.modoEdicao
+                                        ? 'Salvar Alterações'
+                                        : 'Enviar Solicitação',
+                                    style: const TextStyle(
                                       fontSize: 14,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight:
+                                      FontWeight.bold,
                                     ),
                                   ),
-                                  SizedBox(width: 8),
-                                  Icon(
+                                  const SizedBox(width: 8),
+                                  const Icon(
                                     Icons.arrow_forward,
                                     size: 19,
                                   ),
@@ -448,8 +501,7 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                             ),
                           );
                         },
-                      )
-
+                      ),
                     ],
                   ),
                 ),
@@ -498,9 +550,7 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
               },
             ),
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,12 +563,9 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                     color: AppColors.textDark,
                   ),
                 ),
-
                 const SizedBox(height: 3),
-
                 Text(
-                  '${widget.animal.raca}, '
-                      '${widget.animal.idadeEstimada} anos',
+                  '${widget.animal.raca}, ${widget.animal.idadeEstimada} anos',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textGray,
@@ -544,9 +591,7 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
             color: AppColors.textDark,
           ),
         ),
-
         const SizedBox(height: 8),
-
         Divider(
           height: 1,
           thickness: 1,
@@ -609,9 +654,7 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
               )
                   : null,
             ),
-
             const SizedBox(width: 6),
-
             Text(
               value,
               style: const TextStyle(

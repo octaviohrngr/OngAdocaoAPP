@@ -68,12 +68,16 @@ class AnimalRepository {
         temperamento: (json['temperamento'] ?? '').toString(),
         historicoVacina:
         (json['historicoVacina'] ?? '').toString(),
+        status: (json['status'] ?? 'disponivel')
+            .toString()
+            .trim()
+            .toLowerCase(),
       );
     }).toList();
   }
 
   String _urlFoto(dynamic valor) {
-    final foto = (valor ?? '').toString();
+    final foto = (valor ?? '').toString().trim();
 
     if (foto.isEmpty) return '';
 
@@ -81,8 +85,6 @@ class AnimalRepository {
         foto.startsWith('https://')) {
       return foto;
     }
-
-    final baseUrl = Requester().baseUrl;
 
     final nomeArquivo = foto.startsWith('/')
         ? foto.substring(1)
@@ -92,6 +94,16 @@ class AnimalRepository {
         ? nomeArquivo
         : 'uploads/$nomeArquivo';
 
-    return '$baseUrl/$caminho';
+
+    final baseUrl = _service.baseUrl.replaceFirst(
+      RegExp(r'/$'),
+      '',
+    );
+
+    final urlCompleta = '$baseUrl/$caminho';
+
+    print('URL FOTO ANIMAL: $urlCompleta');
+
+    return urlCompleta;
   }
 }
