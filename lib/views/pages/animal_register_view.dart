@@ -172,13 +172,40 @@ class _AnimalRegisterViewState extends State<AnimalRegisterView> {
                   crossAxisAlignment:
                   CrossAxisAlignment.start,
                   children: [
+
                     _label('Idade Estimada'),
-                    TextFormField(
-                      controller: viewModel.idadeController,
-                      keyboardType: TextInputType.number,
-                      validator: viewModel.validarIdade,
-                      decoration: _inputDecoration('Ex: 2 anos'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: viewModel.idadeController,
+                            keyboardType: TextInputType.number,
+                            validator: viewModel.validarIdade,
+                            decoration: _inputDecoration('Ex: 3'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: viewModel.unidadeIdade,
+                            isExpanded: true,
+                            decoration: _inputDecoration(''),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'meses',
+                                child: Text('Meses'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'anos',
+                                child: Text('Anos'),
+                              ),
+                            ],
+                            onChanged: viewModel.selecionarUnidadeIdade,
+                          ),
+                        ),
+                      ],
                     ),
+
                   ],
                 ),
               ),
@@ -279,10 +306,10 @@ class _AnimalRegisterViewState extends State<AnimalRegisterView> {
                   width: 1.5,
                 ),
               ),
-              child: const Column(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircleAvatar(
+                  const CircleAvatar(
                     radius: 25,
                     backgroundColor: AppColors.inputFill,
                     child: Icon(
@@ -291,16 +318,18 @@ class _AnimalRegisterViewState extends State<AnimalRegisterView> {
                       color: AppColors.primaryGreen,
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Text(
-                    'Toque para fazer upload',
-                    style: TextStyle(
+                    viewModel.fotos.length >= 2
+                        ? '2 fotos selecionadas'
+                        : 'Toque para fazer upload',
+                    style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
+                  const SizedBox(height: 4),
+                  const Text(
                     'Selecione até 2 fotos (máx 5MB)',
                     style: TextStyle(
                       fontSize: 11,

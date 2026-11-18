@@ -5,7 +5,7 @@ import '../../viewmodels/adoption_form_viewmodel.dart';
 import '../../data/services/auth_session.dart';
 import '../../models/animal.dart';
 import '../theme/app_colors.dart';
-
+import '../../viewmodels/animal_detail_viewmodel.dart';
 import 'adoption_success_screen.dart';
 import 'login_view.dart';
 
@@ -187,10 +187,30 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
 
     if (!mounted) return;
 
+
     if (sucesso) {
       if (widget.modoEdicao) {
         Navigator.pop(context, true);
       } else {
+        final usuarioId = AuthSession.usuario?.id;
+
+        if (usuarioId != null && usuarioId.isNotEmpty) {
+          final animalDetailViewModel = AnimalDetailViewModel();
+
+          try {
+            await animalDetailViewModel.registrarSolicitacao(
+              widget.animal.id,
+              usuarioId,
+            );
+          } catch (e) {
+            debugPrint('Erro ao salvar solicitação localmente: $e');
+          } finally {
+            animalDetailViewModel.dispose();
+          }
+        }
+
+        if (!mounted) return;
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -209,6 +229,7 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
         ),
       );
     }
+
   }
 
   @override

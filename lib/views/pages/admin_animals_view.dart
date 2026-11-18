@@ -7,7 +7,8 @@ import '../theme/app_colors.dart';
 import 'animal_register_view.dart';
 import 'admin_events_view.dart';
 import 'admin_solicitacoes_view.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'login_view.dart';
 import '../widgets/admin_bottom_navigation_bar.dart';
 
 class AdminAnimalsView extends StatefulWidget {
@@ -46,7 +47,42 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
       await viewModel.carregarAnimais();
     }
   }
+  Future<void> deslogar() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sair da conta'),
+        content: const Text(
+          'Deseja realmente sair da conta de administrador?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
 
+    if (confirmar != true || !mounted) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LoginView(),
+      ),
+          (route) => false,
+    );
+  }
   Future<void> _editarAnimal(Animal animal) async {
     final nome = TextEditingController(text: animal.nome);
     final raca = TextEditingController(text: animal.raca);
@@ -283,6 +319,7 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: const Row(
@@ -298,7 +335,18 @@ class _AdminAnimalsViewState extends State<AdminAnimalsView> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Sair da conta',
+            icon: const Icon(
+              Icons.logout,
+              color: AppColors.primaryGreen,
+            ),
+            onPressed: deslogar,
+          ),
+        ],
       ),
+
       body: SafeArea(
         child: ListenableBuilder(
           listenable: viewModel,
